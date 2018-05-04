@@ -1,0 +1,61 @@
+#
+#         indicators
+#          ^^^^^^^^
+#        /----------|
+# P2P in |          | P2P out
+#      > |          | >
+#      > |          | >
+#      > |          | >
+#      > |          | >
+#        +----------+
+#          ^v^v^v^v
+#         Shared bus
+#
+# P2P in:
+#   - done_out
+#   - daisy_in
+#
+# P2P out:
+#   - done_in
+#   - daisy_out
+#
+# Shared bus:
+#   - c_reset_b
+#   - reset
+#   - data_clk / SCK
+#   - data_in / SI
+#   - data_out_ts
+#   - daisy_sel
+#   - success_inout_ts
+
+# per-device
+set_io hwclk J3 # J3 = HX8K-B-EVB
+
+# global MOSI
+set_io reset_in A1
+
+# data_* share pins with SPI
+# global MOSI
+set_io data_clk L10
+# global MOSI
+set_io data_in J10
+# global MISO 
+set_io data_out_ts K9
+
+# global
+set_io daisy_sel L7
+
+# device-to-device
+set_io daisy_in B4
+set_io daisy_out K11
+
+# device-to-device
+set_io done_in J11
+set_io done_out A5
+
+# device-to-device
+set_io success_inout_ts H10
+
+# per-device (optional)
+set_io status_led B3
+set_io success_led C3

@@ -1,0 +1,62 @@
+#
+#         indicators
+#          ^^^^^^^^
+#        /----------|
+# P2P in |          | P2P out
+#      > |          | >
+#      > |          | >
+#      > |          | >
+#      > |          | >
+#        +----------+
+#          ^v^v^v^v
+#         Shared bus
+#
+# P2P in:
+#   - done_out
+#   - daisy_in
+#
+# P2P out:
+#   - done_in
+#   - daisy_out
+#
+# Shared bus:
+#   - c_reset_b
+#   - reset
+#   - data_clk / SCK
+#   - data_in / SI
+#   - data_out_ts
+#   - daisy_sel
+#   - success_inout_ts
+
+# per-device
+set_io hwclk 35 # 35 = UP5K-B-EVB
+                # IOT_46b_G0
+
+# global MOSI
+set_io reset_in 4 # IOB_8a
+
+# data_* share pins with SPI
+# global MOSI
+set_io data_clk 15 # IOB_34a_SPI_SCK
+# global MOSI
+set_io data_in 17 # IOB_33b_SPI_SI
+# global MISO 
+set_io data_out_ts 18 # IOB_31b
+
+# global
+set_io daisy_sel 19 # IOB_29b
+
+# device-to-device
+set_io daisy_in 2 # IOB_6a
+set_io daisy_out 28 # IOT_41a
+
+# device-to-device
+set_io done_in 26 # IOT_39a
+set_io done_out 3 # IOB_9b
+
+# device-to-device
+set_io success_inout_ts 21 # IOB_23b 
+
+# per-device (optional)
+set_io status_led 39 # RGB0
+set_io success_led 40 # RGB1

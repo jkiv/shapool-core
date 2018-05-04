@@ -1,0 +1,4 @@
+*.out
+*.blif
+*.asc
+*.bin
