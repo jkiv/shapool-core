@@ -26,6 +26,9 @@ module sha_unit(
   reg [479:0] W = 0;
   wire [31:0] Wxt;
 
+  // Message as 16x 32-bit blocks
+  wire [31:0] Mt[0:15];
+
   reg [255:0] S0 = 0;
   wire [255:0] S1;
 
@@ -70,9 +73,6 @@ module sha_unit(
   assign H1[`idx32(2)] = S1[`idx32(2)] + H0[`idx32(2)];
   assign H1[`idx32(1)] = S1[`idx32(1)] + H0[`idx32(1)];
   assign H1[`idx32(0)] = S1[`idx32(0)] + H0[`idx32(0)];
-
-  // Message as 16x 32-bit blocks
-  wire [31:0] Mt[0:15];
 
   assign Mt[ 0] = M[`idx32(15)];
   assign Mt[ 1] = M[`idx32(14)];
