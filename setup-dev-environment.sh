@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Provisioning script for setting up shapool-core build environment
-# - run from shapool-core repo base directory
+# - Assumes Ubuntu 18.04
+# - Run from shapool-core repo base directory
 
 # ... Icestorm dependencies
 sudo apt-get install build-essential clang bison flex libreadline-dev \
