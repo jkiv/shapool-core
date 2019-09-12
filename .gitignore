@@ -2,3 +2,5 @@
 *.blif
 *.asc
 *.bin
+
+external/
