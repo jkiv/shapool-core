@@ -27,29 +27,30 @@ git clone git@github.com:cliffordwolf/icestorm.git icestorm
 git clone git@github.com:cseed/arachne-pnr.git arachne-pnr
 #git clone git@github.com:YosysHQ/nextpnr nextpnr
 git clone git@github.com:cliffordwolf/yosys.git yosys
+cd -
 
 # Build and install icestorm
-cd icestorm
+cd external/icestorm
 make -j$(nproc)
 sudo make install
 cd -
 
 # Build and install arachne-pnr
-cd arachne-pnr
+cd external/arachne-pnr
 make -j$(nproc)
 sudo make install
 cd -
 
 # Build and install nextpnr
 echo '(Skipping nextpnr...)'
-#cd nextpnr
+#cd external/nextpnr
 #cmake -DARCH=ice40 -DCMAKE_INSTALL_PREFIX=/usr/local .
 #make -j$(nproc)
 #sudo make install
 #cd -
 
 # Build and install yosys
-cd yosys
+cd external/yosys
 make -j$(nproc)
 sudo make install
 cd -
