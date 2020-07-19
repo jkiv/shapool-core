@@ -1,3 +1,0 @@
-# ICE40HX8K-EVB Development Board (shapool-core)
-#ACTION=="add", ATTR{idVendor}=="0403", ATTR{idProduct}=="6010", MODE:="666" # 2018
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0660", GROUP="plugdev", TAG+="uaccess"
