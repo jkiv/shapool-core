@@ -1,0 +1,36 @@
+# Pinout for the icepool board (2020-03).
+
+# Pins assignments:
+# Sch Name    Variable        Pin#
+# ----------------------------------------------
+# SCK         sck             L10
+# ~WE         we_n            L5
+# ~GS         gs_n            K6
+# GSDI        gsdi            J9
+# GSDO        gsdo            K9
+# SDI         sdi             G1
+# SDO         sdo             G11
+# READY_IN    ready_in        F3
+# READY       ready_out       F10
+# LED_IND     led_od          A11
+
+# Hardware oscillator (12MHz)
+set_io hwclk A9
+
+# SPI (shared)
+set_io sck L10
+set_io gs_n K6 # was daisy_sel
+set_io we_n L5 # was reset_in
+
+set_io gsdi J9
+set_io gsdo K9 # TODO UNUSED
+
+set_io sdi G1
+set_io sdo G11
+
+# `ready` signal (daisy-chained)
+set_io ready_in F3
+set_io ready_out F10
+
+# Indicator LED
+set_io led A11 # was status_led
