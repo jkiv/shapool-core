@@ -15,7 +15,7 @@
 # LED_IND     led_od          A11
 
 # Hardware oscillator (12MHz)
-set_io hwclk A9
+set_io hwclk B6 
 
 # SPI (shared)
 set_io sck L10

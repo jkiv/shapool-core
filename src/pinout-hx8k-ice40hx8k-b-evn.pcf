@@ -1,67 +1,38 @@
-# Debug indicators
+# Pinout for the ICE40HX8K-B-EVN board. 
 
-#
-#         indicators
-#          ^^^^^^^^
-#        /----------|
-# P2P in |          | P2P out
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#        +----------+
-#          ^v^v^v^v
-#         Shared bus
-#
-# P2P in:
-#   - done_out
-#   - daisy_in
-#
-# P2P out:
-#   - done_in
-#   - daisy_out
-#
-# Shared bus:
-#   - c_reset_b
-#   - reset
-#   - data_clk / SCK
-#   - data_in / SI
-#   - data_out_ts
-#   - daisy_sel
-#   - success_inout_ts
+# Pins assignments:
+# Sch Name    Variable        Pin #
+# ----------------------------------------------
+# SCK         sck             J3
+# ~WE         we_n
+# ~GS         gs_n
+# GSDO        gsdo            T11
+# GSDI        gsdi            P11
+# SDI         sdi
+# SDO         sdo
+# READY_IN    ready_in
+# READY       ready_out
+# LED_IND     led             B5, B4, A2, A1, C5, C4, B3, or C3
 
-# per-device (internal)
-# J3 is used by the HX8K-CT256 EVB
-set_io hwclk J3
+# Hardware oscillator (12MHz)
+set_io hwclk J3 
 
-# global MOSI
-set_io reset_in A16 # IOT_176
+# SPI (shared)
+set_io sck R11
+set_io gs_n # was daisy_sel
+set_io we_n # was reset_in
 
-# data_* share pins with SPI
-# global MOSI
-set_io data_clk R11 # IOB_107_SCK
-# global MOSI
-set_io data_in P11 # IOB_106_SDO
-# global MISO 
-set_io data_out_ts T11 # IOB_89
+set_io gsdi P11
+set_io gsdo T11 # TODO UNUSED
 
-# global
-set_io daisy_sel T10 # IOB_88
+set_io sdi
+set_io sdo
 
-# device-to-device
-set_io daisy_in D1 # IOL_5B
-set_io daisy_out F16 # IOR_147
+# `ready` signal (daisy-chained)
+set_io ready_in
+set_io ready_out
 
-# device-to-device
-set_io done_in E16 # IOR_151
-set_io done_out C1 # IOL_3A
-
-# shared
-set_io success_inout_ts T16 # IOB_100
-
-# per-device (optional)
-# B3 and C3 are used by the HX8K-CT256 EVB
-set_io status_led B3 # IOT_233
-set_io success_led C3 # IOT_227 
-
-# C_RESET_B N11
+# Indicators 
+# - Not open drain. Driven directly by IO.
+# - LED[0:7] = { B5, B4, A2, A1, C5, C4, B3, C3 }
+set_io led B5 # was status_led

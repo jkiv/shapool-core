@@ -1,62 +1,39 @@
-#
-#         indicators
-#          ^^^^^^^^
-#        /----------|
-# P2P in |          | P2P out
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#        +----------+
-#          ^v^v^v^v
-#         Shared bus
-#
-# P2P in:
-#   - done_out
-#   - daisy_in
-#
-# P2P out:
-#   - done_in
-#   - daisy_out
-#
-# Shared bus:
-#   - c_reset_b
-#   - reset
-#   - data_clk / SCK
-#   - data_in / SI
-#   - data_out_ts
-#   - daisy_sel
-#   - success_inout_ts
+# Pinout for the ICE40UP5K-B-EVN board. 
 
-# per-device
-set_io hwclk 35 # 35 = UP5K-B-EVB
-                # IOT_46b_G0
+# Pins assignments:
+# Sch Name    Variable        Pin #
+# ----------------------------------------------
+# SCK         sck             15
+# ~WE         we_n
+# ~GS         gs_n
+# GSDO        gsdo            14
+# GSDI        gsdi            17
+# SDI         sdi
+# SDO         sdo
+# READY_IN    ready_in
+# READY       ready_out
+# LED_IND     led             39, 40, or 41
 
-# global MOSI
-set_io reset_in 4 # IOB_8a
+# Hardware oscillator (12MHz)
+set_io hwclk 35
 
-# data_* share pins with SPI
-# global MOSI
-set_io data_clk 15 # IOB_34a_SPI_SCK
-# global MOSI
-set_io data_in 17 # IOB_33b_SPI_SI
-# global MISO 
-set_io data_out_ts 18 # IOB_31b
+# SPI (shared)
+set_io sck 15
+set_io gs_n # was daisy_sel
+set_io we_n # was reset_in
 
-# global
-set_io daisy_sel 19 # IOB_29b
+set_io gsdi 17
+set_io gsdo 14 # TODO UNUSED
 
-# device-to-device
-set_io daisy_in 2 # IOB_6a
-set_io daisy_out 28 # IOT_41a
+set_io sdi
+set_io sdo
 
-# device-to-device
-set_io done_in 26 # IOT_39a
-set_io done_out 3 # IOB_9b
+# `ready` signal (daisy-chained)
+set_io ready_in
+set_io ready_out
 
-# device-to-device
-set_io success_inout_ts 21 # IOB_23b 
-
-# per-device (optional)
-set_io status_led 39 # RGB0
-set_io success_led 40 # RGB1
+# Indicators 
+# - Open drain
+# - J27 should be jumpered
+# - RGB[0:2] = {39, 40, 41}
+set_io led 39 # was status_led
