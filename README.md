@@ -2,6 +2,10 @@
 
 shapool-core is an FPGA core for SHA256d mining (e.g. XBT), designed for Lattice Semiconductor ICE40 and ECP5 devices using their open-source toolchains.
 
+## Functional Description
+
+TODO
+
 ## Toolchain Setup
 
 TODO
