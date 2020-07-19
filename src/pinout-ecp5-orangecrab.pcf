@@ -1,0 +1,48 @@
+# Pinout for the OrangeCrab r0.2 (ECP5-25F)
+
+# Pins assignments:
+# Sch Name    Variable        Pin #
+# ----------------------------------------------
+# SCK         sck
+# ~WE         we_n
+# ~GS         gs_n
+# GSDO        gsdo
+# GSDI        gsdi
+# SDI         sdi
+# SDO         sdo
+# READY_IN    ready_in
+# READY       ready_out
+# LED_IND     led_od
+
+# Other pins:
+# RST_N V17
+# BTN_N J17
+# PROGRAMN T15
+# IOs: L4, N3, N4, H4, G4, T17, R17, N16, N15, N17, M18
+#      C10, C9, B10, B9, C8, B8, A8, H2, J2
+
+# Hardware oscillator (48MHz)
+set_io hwclk A9
+
+# SPI (shared)
+set_io sck C10
+set_io gs_n B8 # was daisy_sel
+set_io we_n A8 # was reset_in
+
+set_io gsdi C9
+set_io gsdo_ts B10 # TODO UNUSED
+
+set_io sdi B9
+set_io sdo C8
+
+# `ready` signal (daisy-chained)
+set_io ready_in H2
+set_io ready_out J2
+
+# Indicators 
+# - TODO RGBLED open-drain on OrangeCrab?
+# LED1 K4
+# LED2 M3
+# LED3 J3
+set_io led K4 # was status_led
+
