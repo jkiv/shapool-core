@@ -1,64 +1,62 @@
-# ICE40UP5K-B-EVB
-#top-pcf = pinout-up5k-sg48i.pcf
+# ICE40UP5K-B-EVN
+#top-pcf = pinout-up5k-ice40up5k-b-evni.pcf
 #arachne-params = -d 5k -P sg48
 #icetime-params = -d 5k -P sg48 
 
+shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+	yosys -p 'synth_ice40 -top top_up5k -blif shapool_up5k.blif -abc2 -retime' $^ 
+
+shapool_up5k_ice40up5k-b-evn.asc : shapool_up5k.blif pinout-up5k-ice40up5k-b-evn.pcf
+	arachne-pnr -d 5k -P sg48 -o $@ -p pinout-up5k-ice40up5k-b-evn.pcf shapool_up5k.blif
+
+shapool_up5k_ice40up5k-b-evn.bin : shapool_up5k_ice40up5k-b-evn.asc
+	icepack $^ $@
+
+time_up5k_ice40up5k-b-evn : shapool_up5k_ice40up5k-b-evn.asc
+	icetime -t -m -d up5k -P sg48 -p pinout-up5k-ice40up5k-b-evn.pcf -o - $^
+
+burn_up5k_ice40up5k-b-evn : shapool_up5k_ice40up5k-b-evn.bin
+	iceprog $^
+
 # ICE40HX8K-B-EVN
-#top-pcf = pinout-hx8k-ct256.pcf
+#top-pcf = pinout-hx8k-ice40hx8k-b-evn.pcf
 #arachne-params = -d 8k -P ct256
 #icetime-params = -d hx8k -P ct256
 
 shapool_hx8k.blif : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
 	yosys -p 'synth_ice40 -top top_hx8k -blif shapool_hx8k.blif -abc2 -retime' $^ 
+# ... for ICEPOOL as well.
 
-shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
-	yosys -p 'synth_ice40 -top top_up5k -blif shapool_up5k.blif -abc2 -retime' $^ 
+shapool_hx8k_ice40hx8k-b-evn.asc : shapool_hx8k.blif pinout-hx8k-ice40hx8k-b-evn.pcf
+	arachne-pnr -d 8k -P ct256 -o $@ -p pinout-hx8k-ice40hx8k-b-evn.pcf shapool_hx8k.blif
 
-# Route for given device...
-
-shapool_hx8k_ct256.asc : shapool_hx8k.blif pinout-hx8k-ct256.pcf
-	arachne-pnr -d 8k -P ct256 -o $@ -p pinout-hx8k-ct256.pcf shapool_hx8k.blif
-
-shapool_hx8k_bg121.asc : shapool_hx8k.blif pinout-hx8k-bg121.pcf
-	arachne-pnr -d 8k -P cm121 -o $@ -p pinout-hx8k-bg121.pcf shapool_hx8k.blif
-
-shapool_up5k_sg48.asc : shapool_up5k.blif pinout-up5k-sg48.pcf
-	arachne-pnr -d 5k -P sg48 -o $@ -p pinout-up5k-sg48.pcf shapool_up5k.blif
-
-# Make target binary only...
-
-shapool_hx8k_ct256.bin : shapool_hx8k_ct256.asc
+shapool_hx8k_ice40hx8k-b-evn.bin : shapool_hx8k_ice40hx8k-b-evn.asc
 	icepack $^ $@
 
-shapool_hx8k_bg121.bin : shapool_hx8k_bg121.asc
+time_hx8k_ice40hx8k-b-evn : shapool_hx8k_ice40hx8k-b-evn.asc
+	icetime -t -m -d hx8k -P ct256 -p pinout-hx8k-ice40hx8k-b-evn.pcf -o - $^
+
+burn_hx8k_ice40hx8k-b-evn : shapool_hx8k_ice40hx8k-b-evn.bin
+	iceprog $^
+
+# ICEPOOL
+#top-pcf = pinout-hx8k-icepool.pcf
+#arachne-params = -d 8k -P cm121
+#icetime-params = -d hx8k -P cm121 
+
+shapool_hx8k_icepool.asc : shapool_hx8k.blif pinout-hx8k-icepool.pcf
+	arachne-pnr -d 8k -P cm121 -o $@ -p pinout-hx8k-icepool.pcf shapool_hx8k.blif
+
+shapool_hx8k_icepool.bin : shapool_hx8k_icepool.asc
 	icepack $^ $@
 
-shapool_up5k_sg48.bin : shapool_up5k_sg48.asc
-	icepack $^ $@
+time_hx8k_icepool : shapool_hx8k_icepool.asc
+	icetime -t -m -d hx8k -P cm121 -p pinout-hx8k-icepool.pcf -o - $^
 
-# Run timing tests using icetime...
-
-time_hx8k_ct256 : shapool_hx8k_ct256.asc
-	icetime -t -m -d hx8k -P ct256 -p pinout-hx8k-ct256.pcf -o - $^
-
-time_hx8k_bg121 : shapool_hx8k_bg121.asc
-	icetime -t -m -d hx8k -P cm121 -p pinout-hx8k-bg121.pcf -o - $^
-
-time_up5k_sg48 : shapool_up5k_sg48.asc
-	icetime -t -m -d up5k -P sg48 -p pinout-up5k-sg48.pcf -o - $^
-
-.phony: time
+burn_hx8k_icepool : shapool_hx8k_icepool.bin
+	iceprog $^
 
 # Make target binary and upload to device
-burn_hx8k_ct256 : shapool_hx8k_ct256.bin
-	iceprog $^
-
-burn_hx8k_bg121 : shapool_hx8k_bg121.bin
-	iceprog $^
-
-burn_up5k_sg48 : shapool_up5k_sg48.bin
-	iceprog $^
-
 
 # Validate verilog code...
 
@@ -92,6 +90,8 @@ test_sha_unit.out : tests/sha_unit_test.v sha_unit.v sha_round.v w_expand.v
 
 test_sha_unit : test_sha_unit.out
 	vvp $^
+
+# TODO .phony test
 
 # Miscellaneous tests...
 
@@ -135,6 +135,8 @@ burn_single_39_test: tests/hx8k-b-evn/top_single_39.v shapool.v difficulty_map.v
 
 .phony: burn_single_39_test
 
+# TODO phony burn_test?
+
 # Helpers...
 
 # TODO update for current structure
@@ -160,16 +162,16 @@ clean_tests :
 .phony: clean_tests
 
 clean_build :
-	rm -f shapool_*.out \
-		  shapool_*.blif \
-		  shapool_*.asc \
-		  shapool_*.bin
+	rm -f shapool_*.out  \
+	      shapool_*.blif \
+	      shapool_*.asc  \
+	      shapool_*.bin
 
 .phony: clean_build
 
 clean_helpers :
 	rm -f shapool.dot \
-		  shapool.svg
+	      shapool.svg
 
 .phony: clean_helpers
 
