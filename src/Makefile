@@ -3,11 +3,11 @@
 #arachne-params = -d 5k -P sg48
 #icetime-params = -d 5k -P sg48 
 
-shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
-	yosys -p 'synth_ice40 -top top_up5k -blif shapool_up5k.blif -abc2 -retime' $^ 
+shapool_up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+	yosys -p 'synth_ice40 -top top_up5k -json shapool_up5k.json -abc2 -retime' $^ 
 
-shapool_up5k_ice40up5k-b-evn.asc : shapool_up5k.blif pinout-up5k-ice40up5k-b-evn.pcf
-	arachne-pnr -d 5k -P sg48 -o $@ -p pinout-up5k-ice40up5k-b-evn.pcf shapool_up5k.blif
+shapool_up5k_ice40up5k-b-evn.asc : shapool_up5k.json pinout-up5k-ice40up5k-b-evn.pcf
+	nextpnr-ice40 --up5k --package sg48 --json shapool_up5k.json --pcf pinout-up5k-ice40up5k-b-evn.pcf --asc $@
 
 shapool_up5k_ice40up5k-b-evn.bin : shapool_up5k_ice40up5k-b-evn.asc
 	icepack $^ $@
@@ -23,12 +23,12 @@ burn_up5k_ice40up5k-b-evn : shapool_up5k_ice40up5k-b-evn.bin
 #arachne-params = -d 8k -P ct256
 #icetime-params = -d hx8k -P ct256
 
-shapool_hx8k.blif : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
-	yosys -p 'synth_ice40 -top top_hx8k -blif shapool_hx8k.blif -abc2 -retime' $^ 
+shapool_hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+	yosys -p 'synth_ice40 -top top_hx8k -json shapool_hx8k.json -abc2 -retime' $^ 
 # ... for ICEPOOL as well.
 
-shapool_hx8k_ice40hx8k-b-evn.asc : shapool_hx8k.blif pinout-hx8k-ice40hx8k-b-evn.pcf
-	arachne-pnr -d 8k -P ct256 -o $@ -p pinout-hx8k-ice40hx8k-b-evn.pcf shapool_hx8k.blif
+shapool_hx8k_ice40hx8k-b-evn.asc : shapool_hx8k.json pinout-hx8k-ice40hx8k-b-evn.pcf
+	nextpnr-ice40 --hx8k --package ct256 --json shapool_hx8k.json --pcf pinout-hx8k-ice40hx8k-b-evn.pcf --asc $@
 
 shapool_hx8k_ice40hx8k-b-evn.bin : shapool_hx8k_ice40hx8k-b-evn.asc
 	icepack $^ $@
@@ -44,8 +44,8 @@ burn_hx8k_ice40hx8k-b-evn : shapool_hx8k_ice40hx8k-b-evn.bin
 #arachne-params = -d 8k -P cm121
 #icetime-params = -d hx8k -P cm121 
 
-shapool_hx8k_icepool.asc : shapool_hx8k.blif pinout-hx8k-icepool.pcf
-	arachne-pnr -d 8k -P cm121 -o $@ -p pinout-hx8k-icepool.pcf shapool_hx8k.blif
+shapool_hx8k_icepool.asc : shapool_hx8k.json pinout-hx8k-icepool.pcf
+	nextpnr-ice40 --hx8k --package cm121 --json shapool_hx8k.json --pcf pinout-hx8k-icepool.pcf --asc $@
 
 shapool_hx8k_icepool.bin : shapool_hx8k_icepool.asc
 	icepack $^ $@
@@ -94,6 +94,9 @@ test_sha_unit : test_sha_unit.out
 # TODO .phony test
 
 # Miscellaneous tests...
+
+# TODO specify board to load test onto?
+# TODO update to nextpnr-ice40
 
 burn_power_test: tests/hx8k-b-evn/top_power.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
 	yosys -p 'synth_ice40 -top top_power -blif top_power.blif -abc2' $^ 
@@ -163,7 +166,7 @@ clean_tests :
 
 clean_build :
 	rm -f shapool_*.out  \
-	      shapool_*.blif \
+	      shapool_*.json \
 	      shapool_*.asc  \
 	      shapool_*.bin
 
