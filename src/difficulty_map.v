@@ -83,7 +83,9 @@ module difficulty_map(
 
 `else
 
-  output reg [15:0] difficulty = 0;
+  // TODO MachXO3 apply attribute syn_romstyle???
+
+  output reg [15:0] difficulty;
   
   always @(posedge clk)
     begin
