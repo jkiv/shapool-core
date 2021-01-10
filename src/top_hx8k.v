@@ -1,3 +1,5 @@
+`define ICE40
+
 module top_hx8k
 (
   hwclk,

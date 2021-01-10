@@ -168,12 +168,7 @@ module top
     //wire clk;
     wire g_clk;
 
-`ifdef VERILATOR
-
-    //wire clk = hwclk;
-    assign g_clk = hwclk;
-
-`else
+`ifdef ICE40
 
     /* verilator lint_off UNUSED */
     wire pll_locked;
@@ -194,40 +189,33 @@ module top
         .PLLOUTGLOBAL(g_clk)
     );
 
-`endif
+`elsif MACHX03
 
-/*
-`ifdef VERILATOR
-
-    assign g_clk = clk;
+	// TODO PLL
+    assign g_clk = hwclk;
 
 `else
 
-    // Use ICE40 GBUF fabric
-    SB_GB clk_gbuf (
-      .USER_SIGNAL_TO_GLOBAL_BUFFER(clk),
-      .GLOBAL_BUFFER_OUTPUT(g_clk)
-    );
+	// No clock scaling
+    assign g_clk = hwclk;
 
 `endif
-*/
 
     // Global reset
-
     reg reset = 0;
     wire g_reset;
 
-`ifdef VERILATOR
-
-    assign g_reset = reset | success;
-
-`else
+`ifdef ICE40
 
     // Use ICE40 GBUF fabric
     SB_GB reset_gbuf (
       .USER_SIGNAL_TO_GLOBAL_BUFFER(reset | success),
       .GLOBAL_BUFFER_OUTPUT(g_reset)
     );
+
+`else
+
+    assign g_reset = reset | success;
 
 `endif
 
@@ -295,31 +283,26 @@ module top
     /* Tri-state pin setup
      */
 
+`ifdef ICE40
     // SB_IO for tri-stated data_out_ts
-`ifdef VERILATOR
 
-    assign data_out_ts = (success) ? data_out : 1'bz;
-
-`else
-
-    SB_IO #(.PULLUP(1'b0),
+	SB_IO #(.PULLUP(1'b0),
             .PIN_TYPE(6'b101001))
     sbio_data_out (
        .OUTPUT_ENABLE(~success),
        .PACKAGE_PIN(data_out_ts),
-       .D_OUT_0(data_out),
+       .D_OUT_0(data_out)
     );
+
+`else 
+
+    assign data_out_ts = (success) ? data_out : 1'bz;    
 
 `endif
 
+`ifdef ICE40
+
     // SB_IO for tri-stated success_inout_ts / success_in
-`ifdef VERILATOR
-
-    assign success_inout_ts = (success) ? 1'b1 : 1'bz;
-    assign success_in = 0;
-
-`else
-
     SB_IO #(.PULLUP(1'b0),
             .PIN_TYPE(6'b101001))
     sbio_success_out (
@@ -328,6 +311,11 @@ module top
        .D_OUT_0(success),
        .D_IN_0(success_in)
     );
+
+`else
+
+    assign success_inout_ts = (success) ? 1'b1 : 1'bz;
+    assign success_in = 0;
 
 `endif
 

@@ -10,7 +10,7 @@ module SHA256_K (
   input clk;
   input [5:0] round;
 
-`ifndef VERILATOR
+`ifdef ICE40
 
   wire [15:0] data_hi;
   wire [15:0] data_lo;
@@ -124,12 +124,83 @@ module SHA256_K (
   defparam ram256x16_lo.INIT_F =
       256'h0000000000000000000000000000000000000000000000000000000000000000;
 
-`else
+//`elsif MACHXO3
 
-  // Simulate RAM lookup for testing
+`else
 
   output reg [31:0] Kt;
   
+  always @(posedge clk)
+  begin
+	case(round)
+		 0: Kt <= 32'h428a2f98;
+		 1: Kt <= 32'h71374491;
+		 2: Kt <= 32'hb5c0fbcf;
+		 3: Kt <= 32'he9b5dba5;
+		 4: Kt <= 32'h3956c25b;
+		 5: Kt <= 32'h59f111f1;
+		 6: Kt <= 32'h923f82a4;
+		 7: Kt <= 32'hab1c5ed5;
+		 8: Kt <= 32'hd807aa98;
+		 9: Kt <= 32'h12835b01;
+		10: Kt <= 32'h243185be;
+		11: Kt <= 32'h550c7dc3;
+		12: Kt <= 32'h72be5d74;
+		13: Kt <= 32'h80deb1fe;
+		14: Kt <= 32'h9bdc06a7;
+		15: Kt <= 32'hc19bf174;
+		16: Kt <= 32'he49b69c1;
+		17: Kt <= 32'hefbe4786;
+		18: Kt <= 32'h0fc19dc6;
+		19: Kt <= 32'h240ca1cc;
+		20: Kt <= 32'h2de92c6f;
+		21: Kt <= 32'h4a7484aa;
+		22: Kt <= 32'h5cb0a9dc;
+		23: Kt <= 32'h76f988da;
+		24: Kt <= 32'h983e5152;
+		25: Kt <= 32'ha831c66d;
+		26: Kt <= 32'hb00327c8;
+		27: Kt <= 32'hbf597fc7;
+		28: Kt <= 32'hc6e00bf3;
+		29: Kt <= 32'hd5a79147;
+		30: Kt <= 32'h06ca6351;
+		31: Kt <= 32'h14292967;
+		32: Kt <= 32'h27b70a85;
+		33: Kt <= 32'h2e1b2138;
+		34: Kt <= 32'h4d2c6dfc;
+		35: Kt <= 32'h53380d13;
+		36: Kt <= 32'h650a7354;
+		37: Kt <= 32'h766a0abb;
+		38: Kt <= 32'h81c2c92e;
+		39: Kt <= 32'h92722c85;
+		40: Kt <= 32'ha2bfe8a1;
+		41: Kt <= 32'ha81a664b;
+		42: Kt <= 32'hc24b8b70;
+		43: Kt <= 32'hc76c51a3;
+		44: Kt <= 32'hd192e819;
+		45: Kt <= 32'hd6990624;
+		46: Kt <= 32'hf40e3585;
+		47: Kt <= 32'h106aa070;
+		48: Kt <= 32'h19a4c116;
+		49: Kt <= 32'h1e376c08;
+		50: Kt <= 32'h2748774c;
+		51: Kt <= 32'h34b0bcb5;
+		52: Kt <= 32'h391c0cb3;
+		53: Kt <= 32'h4ed8aa4a;
+		54: Kt <= 32'h5b9cca4f;
+		55: Kt <= 32'h682e6ff3;
+		56: Kt <= 32'h748f82ee;
+		57: Kt <= 32'h78a5636f;
+		58: Kt <= 32'h84c87814;
+		59: Kt <= 32'h8cc70208;
+		60: Kt <= 32'h90befffa;
+		61: Kt <= 32'ha4506ceb;
+		62: Kt <= 32'hbef9a3f7;
+		63: Kt <= 32'hc67178f2;
+    endcase
+  end
+  
+  /*
   wire [31:0] Ks[0:63];
 
   always @(posedge clk)
@@ -201,6 +272,7 @@ module SHA256_K (
   assign Ks[61] = 32'ha4506ceb;
   assign Ks[62] = 32'hbef9a3f7;
   assign Ks[63] = 32'hc67178f2;
+  */
 
   /*
   localparam [2047:0] SHA256_K =
@@ -358,6 +430,7 @@ module SHA256_K (
       endcase
     end
     */
+	
 `endif
 
 endmodule

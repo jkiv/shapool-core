@@ -9,34 +9,7 @@ module difficulty_map(
   input wire en;
   input wire [3:0] addr;
 
-`ifdef VERILATOR
-
-  output reg [15:0] difficulty = 0;
-  
-  always @(posedge clk)
-    begin
-      if (en)
-        case (addr)
-          4'h0: difficulty <= 16'b0000_0000_0000_0000;
-          4'h1: difficulty <= 16'b1000_0000_0000_0000;
-          4'h2: difficulty <= 16'b1100_0000_0000_0000;
-          4'h3: difficulty <= 16'b1110_0000_0000_0000;
-          4'h4: difficulty <= 16'b1111_0000_0000_0000;
-          4'h5: difficulty <= 16'b1111_1000_0000_0000;
-          4'h6: difficulty <= 16'b1111_1100_0000_0000;
-          4'h7: difficulty <= 16'b1111_1110_0000_0000;
-          4'h8: difficulty <= 16'b1111_1111_0000_0000;
-          4'h9: difficulty <= 16'b1111_1111_1000_0000;
-          4'hA: difficulty <= 16'b1111_1111_1100_0000;
-          4'hB: difficulty <= 16'b1111_1111_1110_0000;
-          4'hC: difficulty <= 16'b1111_1111_1111_0000;
-          4'hD: difficulty <= 16'b1111_1111_1111_1000;
-          4'hE: difficulty <= 16'b1111_1111_1111_1100;
-          4'hF: difficulty <= 16'b1111_1111_1111_1110;
-        endcase
-    end
-
-`else
+`ifdef ICE40
 
   output wire [15:0] difficulty;
 
@@ -107,6 +80,33 @@ module difficulty_map(
   defparam ram256x16_diffmap.INIT_F =
       256'h0000000000000000000000000000000000000000000000000000000000000000;
 
+
+`else
+
+  output reg [15:0] difficulty = 0;
+  
+  always @(posedge clk)
+    begin
+      if (en)
+        case (addr)
+          4'h0: difficulty <= 16'b0000_0000_0000_0000;
+          4'h1: difficulty <= 16'b1000_0000_0000_0000;
+          4'h2: difficulty <= 16'b1100_0000_0000_0000;
+          4'h3: difficulty <= 16'b1110_0000_0000_0000;
+          4'h4: difficulty <= 16'b1111_0000_0000_0000;
+          4'h5: difficulty <= 16'b1111_1000_0000_0000;
+          4'h6: difficulty <= 16'b1111_1100_0000_0000;
+          4'h7: difficulty <= 16'b1111_1110_0000_0000;
+          4'h8: difficulty <= 16'b1111_1111_0000_0000;
+          4'h9: difficulty <= 16'b1111_1111_1000_0000;
+          4'hA: difficulty <= 16'b1111_1111_1100_0000;
+          4'hB: difficulty <= 16'b1111_1111_1110_0000;
+          4'hC: difficulty <= 16'b1111_1111_1111_0000;
+          4'hD: difficulty <= 16'b1111_1111_1111_1000;
+          4'hE: difficulty <= 16'b1111_1111_1111_1100;
+          4'hF: difficulty <= 16'b1111_1111_1111_1110;
+        endcase
+    end
 
 `endif
 

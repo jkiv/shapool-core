@@ -1,3 +1,5 @@
+`define ICE40
+
 module top_up5k
 (
   hwclk,
