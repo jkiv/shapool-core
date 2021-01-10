@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BaliProject version="3.2" title="shapool" device="LCMXO3LF-6900C-6BG256I" default_implementation="shapool">
+    <Options/>
+    <Implementation title="shapool" dir="shapool" description="shapool" synthesis="synplify" default_strategy="Strategy1">
+        <Options def_top="top_machx03lf_6900" top="top_machx03lf_6900"/>
+        <Source name="../../src/difficulty_map.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/sha_round.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/sha_unit.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/SHA256_K.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/shapool.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/top.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/w_expand.v" type="Verilog" type_short="Verilog">
+            <Options/>
+        </Source>
+        <Source name="../../src/top_machx03lf_6900.v" type="Verilog" type_short="Verilog">
+            <Options top_module="top_machx03lf_6900"/>
+        </Source>
+        <Source name="shapool.lpf" type="Logic Preference" type_short="LPF">
+            <Options/>
+        </Source>
+    </Implementation>
+    <Strategy name="Strategy1" file="shapool1.sty"/>
+</BaliProject>
