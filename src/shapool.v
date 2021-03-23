@@ -4,7 +4,7 @@ module shapool
 (
   // Control
   clk,
-  reset,
+  reset_n,
   // Job Params
   sha_state,
   message_head,
@@ -24,7 +24,7 @@ module shapool
      */
 
     input wire clk;
-    input wire reset;
+    input wire reset_n;
 
     // Job parameters
     input wire [255:0] sha_state;
@@ -177,7 +177,7 @@ module shapool
     // Control skip_first flag
     always @(posedge clk)
       begin
-        if (reset)
+        if (!reset_n)
           skip_first <= 1;
         else if (round == 1)
           skip_first <= 0;
@@ -186,7 +186,7 @@ module shapool
     // Control skip_second flag
     always @(posedge clk)
       begin
-        if (reset)
+        if (!reset_n)
           skip_second <= 1;
         else if (round == 1 && !skip_first)
           skip_second <= 0;
@@ -194,7 +194,7 @@ module shapool
 
     always @(posedge clk)
       begin
-        if (reset)
+        if (!reset_n)
           round <= 0;
         else
           round <= round + 1; // mod 63 
@@ -202,7 +202,7 @@ module shapool
   
     always @(posedge clk)
       begin
-        if (reset)
+        if (!reset_n)
           nonce <= nonce_start;
         else if (round == 1 && !skip_first)
           // Compare would have round == 0, but nonce value not needed until
