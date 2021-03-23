@@ -8,11 +8,11 @@
 #arachne-params = -d 8k -P ct256
 #icetime-params = -d hx8k -P ct256
 
-shapool_hx8k.blif : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
-	yosys -p 'synth_ice40 -top top_hx8k -blif shapool_hx8k.blif -abc2 -retime' $^ 
+shapool_hx8k.blif : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+	yosys -p 'synth_ice40 -top top_hx8k -blif $@ -abc2 -retime' $^ 
 
-shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
-	yosys -p 'synth_ice40 -top top_up5k -blif shapool_up5k.blif -abc2 -retime' $^ 
+shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+	yosys -p 'synth_ice40 -top top_up5k -blif $@ -abc2 -retime' $^ 
 
 # Route for given device...
 
@@ -62,7 +62,7 @@ burn_up5k_sg48 : shapool_up5k_sg48.bin
 
 # Validate verilog code...
 
-lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	verilator -Wall -cc top.v
 
 .phony: lint

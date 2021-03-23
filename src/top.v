@@ -84,30 +84,34 @@
 module top
 (
   clk_in,
-  nreset_in,
+  reset_n_in,
   // Global data
   sck0_in,
   sdi0_in,
-  ncs0_in,
+  cs0_n_in,
   // Daisy data
   sck1_in,
   sdi1_in,
   sdo1_out,
-  ncs1_in,
+  cs1_n_in,
   // Success flags
-  nready_ts_inout,
+  ready_n_ts_inout,
   // Indicators
-  nstatus_led_out
+  status_led_n_out
 );
+
+    localparam DEVICE_CONFIG_WIDTH = 8; // nonce_start
+    localparam JOB_CONFIG_WIDTH = 256 + 96 + 8; // sha_state + message_head + difficulty
+    localparam RESULT_DATA_WIDTH = 32; // nonce
+
+    localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
 
     parameter POOL_SIZE      = 2;
     parameter POOL_SIZE_LOG2 = 1;
 
-    localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
-
     // Minimum difficulty, in number of leading zeros
     // -- minimum 64, maximum 240
-    parameter BASE_DIFFICULTY = 64; // TODO set from yosys/command line
+    parameter BASE_DIFFICULTY = 64;
 
     /*
       DIFFICULTY example:
@@ -122,30 +126,28 @@ module top
     */
 
     // PLL parameters: 12MHz to 48MHz
-    // 
     parameter PLL_DIVR = 4'b0000;
     parameter PLL_DIVF = 7'b0111111;
     parameter PLL_DIVQ = 3'b100;
 
-    /* Inputs and outputs
-     */
+    // Inputs and Outputs
 
     input wire clk_in;
 
-    input wire nreset_in;
+    input wire reset_n_in;
 
     input wire sck0_in;
     input wire sdi0_in;
-    output wire ncs0_in;
+    input wire cs0_n_in;
 
     input wire sck1_in;
     input wire sdi1_in;
     output wire sdo1_out;
-    output wire ncs1_in;
+    input wire cs1_n_in;
 
-    inout wire nready_ts_out;
+    inout wire ready_n_ts_inout;
 
-    output wire nstatus_led_out;
+    output wire status_led_n_out;
 
     // Global clock signal
 
@@ -176,72 +178,76 @@ module top
         .PLLOUTGLOBAL(g_clk)
     );
 
-`endif
-
-/*
-`ifdef VERILATOR
-
-    assign g_clk = clk;
-
-`else
-
+    /*
     // Use ICE40 GBUF fabric
     SB_GB clk_gbuf (
-      .USER_SIGNAL_TO_GLOBAL_BUFFER(clk),
+      .USER_SIGNAL_TO_GLOBAL_BUFFER(clk_in),
       .GLOBAL_BUFFER_OUTPUT(g_clk)
     );
+    */
 
 `endif
-*/
 
     // Global reset
-
-    wire g_reset;
+    wire g_reset_n;
 
 `ifdef VERILATOR
-
-    assign g_reset = ~nreset_in;
-
+    assign g_reset_n = reset_n_in;
 `else
-
     // Use ICE40 GBUF fabric
     SB_GB reset_gbuf (
-      .USER_SIGNAL_TO_GLOBAL_BUFFER(~nreset_in),
-      .GLOBAL_BUFFER_OUTPUT(g_reset)
+      .USER_SIGNAL_TO_GLOBAL_BUFFER(reset_n_in),
+      .GLOBAL_BUFFER_OUTPUT(g_reset_n)
     );
-
 `endif
-
-    // Result buffer (32 bits)
-    // * 32' winning nonce
-    localparam RESULT_BUFFER_WIDTH = 32;
-    reg[RESULT_BUFFER_WIDTH-1:0] result_buffer = 0;
-
-    // Prevent extra writes to data_out_ts on clk while data_clk is high
-    reg lock_tx = 0;
 
     // Device parameters
     //    * 8'  nonce starting count
-    reg [7:0] nonce_start = 0;
+    wire [7:0] nonce_start;
     
     //  Job parameters
     //    * 256' initial SHA256 state
     //    *  96' start of first message block
     //    *   8' difficulty adjustment
-    reg [255:0] sha_state = 0;
-    reg [95:0] message_head = 0;
-    reg [7:0] difficulty = 0;
+    wire [255:0] sha_state;
+    wire [95:0] message_head;
+    wire [7:0] difficulty;
 
-    wire [15:0] difficulty_bm;
+    // External IO interface
+    external_io #(
+      .DEVICE_CONFIG_WIDTH(DEVICE_CONFIG_WIDTH),
+      .JOB_CONFIG_WIDTH(JOB_CONFIG_WIDTH),
+      .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH),
+      .SHAPOOL_RESULT_WIDTH(NONCE_WIDTH)
+    ) ext_io (
+      .clk(g_clk),
+      .reset_n(g_reset_n),
+      // SPI(0)
+      .sck0(sck0_in),
+      .sdi0(sdi0_in),
+      .cs0_n(cs0_n_in),
+      // SPI(1)
+      .sck1(sck1_in),
+      .sdi1(sdi1_in),
+      .sdo1(sdo1_out),
+      .cs1_n(cs1_n_in),
+      // Stored data
+      .device_config({ nonce_start }),
+      .job_config({ sha_state, message_head, difficulty }),
+      // From shapool
+      .shapool_result(nonce),
+      .shapool_success(success) // .shapool_success(~ready_n_ts_inout | success)
+    );
 
     // Difficulty bitmask lookup
     // -- host-provided value is no. of zeros to add to BASE_DIFFICULTY
     // -- convert 4-bit difficulty to 16-bit zeros mask
+    wire [15:0] difficulty_bitmask;
     difficulty_map dm (
       g_clk,
-      g_reset, // en
+      ~g_reset_n, // en
       difficulty[3:0],
-      difficulty_bm
+      difficulty_bitmask
     );
 
     // Whether any unit on this device was successful
@@ -258,115 +264,19 @@ module top
     pool (
       // Control
       g_clk,
-      g_reset,
+      g_reset_n,
       // Parameters
       sha_state,
       message_head,
-      difficulty_bm,
+      difficulty_bitmask,
       nonce_start,
       // Results
       success,
       nonce
     );
 
-    /* Control
-     */
+    assign ready_n_ts_inout = success ? 1'b0 : 1'bz;
 
-    // State machine definition
-    localparam STATE_IDLE = 2'b00,
-               STATE_EXEC = 2'b01,
-               STATE_DONE = 2'b10,
-               STATE_UNKN = 2'b11;
-
-    reg [1:0] state = STATE_IDLE;
-
-    always @(posedge g_clk)
-      begin
-        if (g_reset)
-          begin
-            state <= STATE_IDLE;
-          end
-        else
-          begin
-            case(state)
-              STATE_IDLE:
-                if (!g_reset)
-                  begin
-                    state <= STATE_EXEC;
-                  end
-              STATE_EXEC:
-                if (success || !nready_ts_inout)
-                  begin
-                    state <= STATE_DONE;
-                  end
-                  
-                if (success)
-                  begin
-                    /* verilator lint_off WIDTHCONCAT */
-
-                    // NOTE: The top POOL_SIZE_LOG2 bits are zeroed.
-                    //       Host needs to perform check on all possible combination
-                    //       of these bits.
-                    
-                    // TODO eliminate the need for this ^
-
-                    // NOTE: Success occurred a previous nonce.
-                    //       By the time nonce is saved, the hash is for the value
-                    //       of nonce - 1. In order to save resources, the host is
-                    //       responsible for correcting this offset. 
-                    result_buffer <= {
-                      {(32-NONCE_WIDTH){1'b0}},
-                      nonce
-                    };
-                    /* verilator lint_on WIDTHCONCAT */
-                  end
-                else
-                  begin
-                    result_buffer <= {(RESULT_BUFFER_WIDTH){1'b0}};
-                  end
-              STATE_DONE:
-                state <= STATE_DONE;
-              default:
-                state <= STATE_IDLE;
-            endcase
-          end
-      end
-
-    nready_ts_inout <= (success) ? 1'b0 : 1'bz;
-
-    always @(posedge sck0_in)
-      begin
-        if (state == STATE_IDLE && !ncs0_in)
-          begin
-            // Shift in data msb-first
-            sha_state <= { sha_state[254:0], message_head[95] };
-            message_head <= { message_head[94:1], difficuly[7] };
-            difficulty <= { difficulty[6:0], sdi0_in };
-          end
-      end
-
-    assign sdo0_out = sha_state[255];
-
-    always @(posedge sck1_in)
-      begin
-        if (!ncs0_in)
-          begin
-            if (state == STATE_IDLE)
-              begin
-                // Shift config data msb-first
-                nonce_start <= { nonce_start[6:0], sdi1_in };
-              end
-            else if (state == STATE_DONE)
-              begin
-                // Shift result data msb-first
-                result_buffer <= { result_buffer[RESULT_BUFFER_WIDTH-2:0], sdi1_in };
-              end
-          end
-      end
-
-      assign sdo1_out = (state == STATE_IDLE) ? nonce_start[7] :
-                        (state == STATE_DONE) ? result_buffer[31] :
-                        1'b0;
-
+    assign status_led_n_out = !((!cs0_n_in | !cs1_n_in) & (sck0_in | sck1_in)); // Blink on SPI(0) or SPI(1)
 
 endmodule
