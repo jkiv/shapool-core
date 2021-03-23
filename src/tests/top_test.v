@@ -1,24 +1,25 @@
-module top_test();
- 
+`timescale 1us/10ns
+
+module test_top();
+
   `define VERILATOR
 
-  reg clk = 0;
-  reg reset = 0;
+  reg clk_in = 0;
 
-  reg data_clk = 0;
-  reg data_in = 0;
-  wire data_out_ts;
+  reg reset_n_in = 0;
 
-  reg daisy_sel = 0;
-  reg daisy_in = 0;
-  wire daisy_out;
+  reg sck0_in;
+  reg sdi0_in;
+  reg cs0_n_in;
 
-  reg done_in = 0;
-  wire done_out;
-  wire success_inout_ts;
+  reg sck1_in;
+  reg sdi1_in;
+  wire sdo1_out;
+  reg cs1_n_in;
 
-  wire status_led;
-  wire success_led;
+  wire ready_n_ts_inout;
+
+  wire status_led_n_out;
 
   `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1:
 
@@ -33,24 +34,21 @@ module top_test();
     .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
     .BASE_DIFFICULTY(BASE_DIFFICULTY))
   uut (
-    clk,
-    reset,
+    clk_in,
+    reset_n_in,
     // Global data
-    data_clk,
-    data_in,
-    data_out_ts,
+    sck0_in,
+    sdi0_in,
+    cs0_n_in,
     // Daisy data
-    daisy_sel,
-    daisy_in,
-    daisy_out,
-    // Done flags
-    done_in,
-    done_out,
+    sck1_in,
+    sdi1_in,
+    sdo1_out,
+    cs1_n_in,
     // Success flags
-    success_inout_ts,
+    ready_n_ts_inout,
     // Indicators
-    status_led,
-    success_led
+    status_led_n_out
   );
 
   // Test case
@@ -58,7 +56,7 @@ module top_test();
   reg [31:0] n = 0;
   reg [31:0] i = 0;
 
-  localparam [359:0] test_data0 = {
+  localparam [359:0] test_spi0_data0 = {
     128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5, // SHA starting state
     128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df, // ...
     96'hdc141787_358b0553_535f0119,           // Start of message block
@@ -68,112 +66,124 @@ module top_test();
                                               //    4 total leading zeros
   };
 
-  localparam [7:0] test_daisy_data0 = {
+  localparam [7:0] test_spi1_data0 = {
     8'h00 // nonce start (MSB) 
   };
 
-  reg [7:0] test_daisy_data;
-  reg [359:0] test_data;
+  reg [359:0] test_spi0_data;
+  reg [7:0] test_spi1_data;
   reg [31:0] result;
 
   initial
     begin
 
-      test_daisy_data = test_daisy_data0;
-      test_data = test_data0;
+      $dumpfile("test_top.vcd");
+      $dumpvars;
 
-      #1 clk = 0;
+      test_spi0_data = test_spi0_data0;
+      test_spi1_data = test_spi1_data0;
 
-      #1 reset = 1;
-      #1 clk = 1;
-      #1 clk = 0;
+      // Initial states
+      clk_in = 0;
+      reset_n_in = 1;
+      sck0_in = 0;
+      cs0_n_in = 1;
+      sck1_in = 0;
+      cs1_n_in = 1;
+
+      // Deassert reset_n_in to enter STATE_IDLE
+      // -- to read in data on SPI
+      #1 reset_n_in = 0;
 
       ///////////////////////////////////
       // Clock-in device configuration //
       ///////////////////////////////////
  
-      #1 reset = 1;
-      #1 daisy_sel = 1;
-
-      #1 clk = 1; // reset is synchronized with clk
-      #1 clk = 0;
+      // Assert CS1
+      #1 cs1_n_in = 0;
 
       for (i = 0; i < 8; i = i + 1)
         begin
-          // Simulate shift-out FIFO 
-          #1 daisy_in = test_daisy_data[0];
-          #1 test_daisy_data = { 1'b0, test_daisy_data[7:1] };
+          // Shift-in data msb-first
+          #1 sdi1_in = test_spi1_data[7];
+          test_spi1_data <= { test_spi1_data[6:0], 1'b0 };
 
-          #1 data_clk = 1;
-          // clk's not needed for transfer, but they'll be occurring
-          #1 clk = 1;
-          #1 clk = 0;
-          #1 clk = 1;
-          #1 clk = 0;
-          // ...
+          #1 sck1_in = 1;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
 
-          #1 data_clk = 0;
-          // clk's not needed for transfer, but they'll be occurring
-          #1 clk = 1;
-          #1 clk = 0;
-          #1 clk = 1;
-          #1 clk = 0;
-          // ...
+          #1 sck1_in = 0;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
         end
+
+      #1 cs1_n_in = 1;
 
       /////////////////////////////
       // Clock-in job parameters //
       /////////////////////////////
 
-      #1 reset = 1;
-      #1 daisy_sel = 0;
-
-      #1 clk = 1;
-      #1 clk = 0;
+      #1 cs0_n_in = 0;
      
       for (i = 0; i < 360; i = i + 1)
         begin
           // Simulate FIFO into device
-          #1 data_in = test_data[0];
-          #1 test_data = { 1'b0, test_data[359:1] };
+          #1 sdi0_in = test_spi0_data[359];
+          test_spi0_data <= { test_spi0_data[358:0], 1'b0 };
 
-          #1 data_clk = 1;
-          // clk's not needed for transfer, but they'll be occurring
-          #1 clk = 1;
-          #1 clk = 0;
-          #1 clk = 1;
-          #1 clk = 0;
-          // ...
+          #1 sck0_in = 1;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
 
-          #1 data_clk = 0;
-          // clk's not needed for transfer, but they'll be occurring
-          #1 clk = 1;
-          #1 clk = 0;
-          #1 clk = 1;
-          #1 clk = 0;
-          // ...
+          #1 sck0_in = 0;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
         end
+
+      #1 cs0_n_in = 1;
 
       $display("Device configuration");
       $display("  nonce start MSB: %h", uut.nonce_start);
 
       $display("Job parameters:");
-      $display("  SHA256 state:  %h", uut.sha_state[255:128]);
-      $display("                 %h", uut.sha_state[127:0]);
-      $display("  message head:  %h", uut.message_head);
-      $display("  difficulty:    %h", uut.difficulty);
-      $display("  difficulty_bm: %h", uut.difficulty_bm);
+      $display("  SHA256 state:       %h", uut.sha_state[255:128]);
+      $display("                      %h", uut.sha_state[127:0]);
+      $display("  message head:       %h", uut.message_head);
+      $display("  difficulty:         %h", uut.difficulty);
+      $display("  difficulty_bitmask: %h", uut.difficulty_bitmask);
 
       /////////////////////////////////
       // Reset and run until success //
       /////////////////////////////////
+ 
+      // Deassert reset_n_in to enter STATE_EXEC
+      #1 reset_n_in = 1;
 
-      #1 reset = 0;
-      // Reset is synchronized with clock
-      #1 clk = 1;
-      #1 clk = 0;
-
-      for (n = 0; n < 50 && !success_led; n = n + 1)
+      for (n = 0; n < 50 && !ready_n_ts_inout; n = n + 1)
         begin
 
           for (i = 0; i < 64; i = i + 1)
@@ -202,45 +212,59 @@ module top_test();
               $display("    test bits: %h", { uut.pool.tracks[0].H[BASE_DIFFICULTY+16-1:16], uut.pool.tracks[0].H[15:0] & uut.pool.difficulty_bm });
               $display("");
 
-              #1 clk = 1;
-              #1 clk = 0;
+              #1 clk_in = 1;
+              #1 clk_in = 0;
             end
 
         end
 
-     // Extra clock to save output/result
-     #1 clk = 1;
-     #1 clk = 0;
+      // Extra clock to save output/result
+      #1 clk_in = 1;
+      #1 clk_in = 0;
 
-     $display("top_test result_buffer:");
-     $display("  nonce: %h", uut.result_buffer[31:0]);
+      $display("nonce: %h", uut.nonce);
+      $display("ext_io.result_data: %h", uut.ext_io.result_data);
 
-     // Pull result
-     for (i = 0; i < 32; i = i + 1)
-       begin
-         $display("[%d] (%b) %b", i, success_inout_ts, data_out_ts);
+      // Extra clock to save result to output buffer
+      #1 clk_in = 1;
+      #1 clk_in = 0;
 
-         // Simulate shift-in FIFO
-         #1 result = { data_out_ts, result[31:1] };
+      $display("nonce: %h", uut.nonce);
+      $display("ext_io.result_data: %h", uut.ext_io.result_data);
 
-         #1 data_clk = 1;
-         #1 clk = 1;
-         #1 clk = 0;
-         #1 clk = 1;
-         #1 clk = 0;
-         // ...
+      // Shift result out over SPI1
+      #1 cs1_n_in = 0;
+      
+      for (i = 0; i < 32; i = i + 1)
+        begin
+          $display("[%d] (%b) %b", i, ready_n_ts_inout, sdo1_out);
 
-         #1 data_clk = 0;
-         #1 clk = 1;
-         #1 clk = 0;
-         #1 clk = 1;
-         #1 clk = 0;
-         // ...
+          #1 sck1_in = 1;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
 
-       end
+          result <= { result[30:0], sdo1_out };
 
-     $display("top_test result:");
-     $display("  nonce: %d", result);
+          #1 sck1_in = 0;
+          
+          // Need 3 clock cycles to synchronize sck1_in
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+          #1 clk_in = 1;
+          #1 clk_in = 0;
+        end
+
+      #1 cs1_n_in = 1;
+
+      $display("top_test result: %h", result);
 
     end
 
