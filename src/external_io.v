@@ -25,7 +25,6 @@ module external_io(
     parameter JOB_CONFIG_WIDTH = 1;
     parameter DEVICE_CONFIG_WIDTH = 1;
     parameter RESULT_DATA_WIDTH = 1;
-    parameter SHAPOOL_RESULT_WIDTH = 1;
 
     // Inputs and outputs
 
@@ -47,7 +46,7 @@ module external_io(
     reg [RESULT_DATA_WIDTH-1 : 0] result_data = 0;
 
     // From shapool
-    input wire [SHAPOOL_RESULT_WIDTH-1 : 0] shapool_result;
+    input wire [RESULT_DATA_WIDTH-1 : 0] shapool_result;
     input wire shapool_success;
 
     // State machine definition
@@ -57,6 +56,30 @@ module external_io(
                STATE_UNKN = 2'b11;
 
     reg [1:0] state = STATE_IDLE;
+
+    // Synchronize SPI signals to core `clk`
+
+    reg [2:0] sck0_sync = 0;
+    wire sck0_sync_rising_edge;
+    
+    reg [2:0] sck1_sync = 0;
+    wire sck1_sync_rising_edge;
+
+    always @(posedge clk)
+      begin
+        sck0_sync <= { sck0_sync[1:0], sck0 };
+      end
+
+    always @(posedge clk)
+      begin
+        sck1_sync <= { sck1_sync[1:0], sck1 };
+      end
+
+    assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
+    assign sck1_sync_rising_edge = !sck1_sync[2] & sck1_sync[1];
+
+    // TODO sdi0, sdi1
+    // TODO "rising edge" signal for sck0, sck1
 
     // State machine process
     always @(posedge clk)
@@ -91,11 +114,8 @@ module external_io(
                     //       By the time nonce is saved, the hash is for the value
                     //       of nonce - 1. In order to save resources, the host is
                     //       responsible for correcting this offset. 
-                    // TODO elimate this comment
-                    result_data <= {
-                      {(RESULT_DATA_WIDTH-SHAPOOL_RESULT_WIDTH){1'b0}},
-                      shapool_result
-                    };
+                    // TODO eliminate the need for this ^
+                    result_data <= shapool_result;
                     // TODO actual winning nonce
 
                     /* verilator lint_on WIDTHCONCAT */
@@ -109,33 +129,41 @@ module external_io(
       end
 
     // SPI0 process
-    always @(posedge sck0)
+    always @(posedge clk)
       begin
-        if (state == STATE_IDLE && !cs0_n)
+        // If rising edge of sck0 and cs0_n asserted:
+        if (sck0_sync_rising_edge && !cs0_n)
           begin
-            // Shift in data msb-first
-            job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
+            if (state == STATE_IDLE)
+              begin
+                // Shift in data msb-first
+                job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
+              end
           end
       end
 
     // SPI1 process
-    always @(posedge sck1)
+    always @(posedge clk)
       begin
-        if (!cs1_n)
+        // If rising edge sck1 and cs1_n asserted:
+        if (sck1_sync_rising_edge && !cs1_n)
           begin
             if (state == STATE_IDLE)
               begin
-                // Shift config data msb-first
-                device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
+                  // Shift config data (msb-first)
+                  device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
               end
             else if (state == STATE_DONE)
               begin
-                // Shift result data msb-first
+                // Shift result data (msb-first)
                 result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1 };
               end
           end
       end
 
+      // FIXME might need to shift out sdo1 on cs1_n falling edge, and sck1 falling edge
+      //       as per SPI mode 0,0. For now I'm OK with sdo1 changing immediately after
+      //       sampling/rising edge.
       assign sdo1 = (state == STATE_IDLE) ? device_config[DEVICE_CONFIG_WIDTH-1] :
                     (state == STATE_DONE) ? result_data[RESULT_DATA_WIDTH-1] :
                     1'b0;

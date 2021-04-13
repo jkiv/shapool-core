@@ -9,10 +9,10 @@
 #icetime-params = -d hx8k -P ct256
 
 shapool_hx8k.blif : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
-	yosys -p 'synth_ice40 -top top_hx8k -blif $@ -abc2 -retime' $^ 
+	yosys -p 'synth_ice40 -top top_hx8k -blif $@ -abc2 -retime' $^
 
 shapool_up5k.blif : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
-	yosys -p 'synth_ice40 -top top_up5k -blif $@ -abc2 -retime' $^ 
+	yosys -p 'synth_ice40 -top top_up5k -blif $@ -abc2 -retime' $^
 
 # Route for given device...
 
@@ -69,7 +69,7 @@ lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_m
 
 # Run tests...
 
-test_top.out : tests/top_test.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+test_top.out : tests/top_test.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	iverilog -o $@  $^
 
 test_top : test_top.out
@@ -91,6 +91,12 @@ test_sha_unit.out : tests/sha_unit_test.v sha_unit.v sha_round.v w_expand.v
 	iverilog -o $@  $^
 
 test_sha_unit : test_sha_unit.out
+	vvp $^
+
+test_external_io.out : tests/external_io_test.v external_io.v
+	iverilog -o $@  $^
+
+test_external_io : test_external_io.out
 	vvp $^
 
 # Miscellaneous tests...
@@ -148,9 +154,12 @@ shapool.svg : shapool.dot
 
 clean_tests :
 	rm -f test_top.out \
+		  test_top.vcd \
 	      test_multi_top.out \
 	      test_shapool.out \
 		  test_sha_unit.out \
+		  test_external_out.vcd \
+		  test_external_io.vcd \
 		  top_power.blif top_power.asc top_power.bin \
 	      top_idle.blif top_idle.asc top_idle.bin \
 	      top_RAM.blif top_RAM.asc top_RAM.bin \

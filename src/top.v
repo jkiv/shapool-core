@@ -211,32 +211,39 @@ module top
     //    *   8' difficulty adjustment
     wire [255:0] sha_state;
     wire [95:0] message_head;
+    /* verilator lint_off UNUSED */
     wire [7:0] difficulty;
+    /* verilator lint_on UNUSED */
+
+    // Whether any unit on this device was successful
+    wire success;
+
+    // Nonce result
+    wire [NONCE_WIDTH-1:0] nonce;
 
     // External IO interface
     external_io #(
       .DEVICE_CONFIG_WIDTH(DEVICE_CONFIG_WIDTH),
       .JOB_CONFIG_WIDTH(JOB_CONFIG_WIDTH),
-      .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH),
-      .SHAPOOL_RESULT_WIDTH(NONCE_WIDTH)
+      .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH)
     ) ext_io (
-      .clk(g_clk),
-      .reset_n(g_reset_n),
+      g_clk,
+      g_reset_n,
       // SPI(0)
-      .sck0(sck0_in),
-      .sdi0(sdi0_in),
-      .cs0_n(cs0_n_in),
+      sck0_in,
+      sdi0_in,
+      cs0_n_in,
       // SPI(1)
-      .sck1(sck1_in),
-      .sdi1(sdi1_in),
-      .sdo1(sdo1_out),
-      .cs1_n(cs1_n_in),
+      sck1_in,
+      sdi1_in,
+      sdo1_out,
+      cs1_n_in,
       // Stored data
-      .device_config({ nonce_start }),
-      .job_config({ sha_state, message_head, difficulty }),
+      { nonce_start },
+      { sha_state, message_head, difficulty },
       // From shapool
-      .shapool_result(nonce),
-      .shapool_success(success) // .shapool_success(~ready_n_ts_inout | success)
+      { {(RESULT_DATA_WIDTH-NONCE_WIDTH){1'b0}}, nonce },
+      success // ~ready_n_ts_inout | success
     );
 
     // Difficulty bitmask lookup
@@ -249,12 +256,6 @@ module top
       difficulty[3:0],
       difficulty_bitmask
     );
-
-    // Whether any unit on this device was successful
-    wire success;
-
-    // Nonce result
-    wire [NONCE_WIDTH-1:0] nonce;
 
     // Hasher pool
     shapool
