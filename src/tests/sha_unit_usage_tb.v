@@ -19,7 +19,7 @@ module sha_unit_usage_tb();
       128'hb00361a3_96177a9c_b410ff61_f20015ad };
 
   `define VERILATOR
-  `define DEBUG_VERBOSE
+  //`define DEBUG_VERBOSE
 
   // SHA256 constants
   // TODO was reg[0:255]
@@ -164,17 +164,6 @@ module sha_unit_usage_tb();
       Kt <= K[0];
       clk <= 0;
 
-      $display("Test #1 - Block #1:");
-      $display("  M:");
-      $display("    %h", M_fips1[511:384]);
-      $display("    %h", M_fips1[383:256]);
-      $display("    %h", M_fips1[255:128]);
-      $display("    %h", M_fips1[127:  0]);
-      $display("  H (in):");
-      $display("    %h", SHA256_H0[255:128]);
-      $display("    %h", SHA256_H0[127:  0]);
-      $display("");
-
       // Clock 64 times 
       for (i = 0; i < 64; i = i + 1)
         begin
@@ -187,20 +176,42 @@ module sha_unit_usage_tb();
             $display("[%2d] S1: %h %h %h %h %h %h %h %h", round, uut.S1[255:224], uut.S1[223:192], uut.S1[191:160], uut.S1[159:128], uut.S1[127:96], uut.S1[95:64], uut.S1[63:32], uut.S1[31:0]);
             $display("[%2d] H0: %h %h %h %h %h %h %h %h", round, uut.H0[255:224], uut.H0[223:192], uut.H0[191:160], uut.H0[159:128], uut.H0[127:96], uut.H0[95:64], uut.H0[63:32], uut.H0[31:0]);
             $display("[%2d] H1: %h %h %h %h %h %h %h %h", round, uut.H1[255:224], uut.H1[223:192], uut.H1[191:160], uut.H1[159:128], uut.H1[127:96], uut.H1[95:64], uut.H1[63:32], uut.H1[31:0]);
+            $display("");
           `endif
 
           #1; // falling edge
           
         end
+      if (H == H_fips1)
+        begin
+          $display("\033\133\063\062\155[PASS]\033\133\060\155 `sha_unit`, FIPS-1 Single block");
+          $display("       H0           = %h", SHA256_H0[255:128]);
+          $display("                      %h", SHA256_H0[127:  0]);
+          $display("       M            = %h", M_fips1[511:384]);
+          $display("                      %h", M_fips1[383:256]);
+          $display("                      %h", M_fips1[255:128]);
+          $display("                      %h", M_fips1[127:  0]);
+          $display("       H (actual)   = %h", H[255:128]);
+          $display("                      %h", H[127:  0]);
+          $display("       H (expected) = %h", H_fips1[255:128]);
+          $display("                      %h", H_fips1[127:  0]);
+        end
+      else
+        begin
+          $display("\n\033\133\063\061\155[FAIL]\033\133\060\155 `sha_unit`, FIPS-1 Single block");
+          $display("       H0           = %h", SHA256_H0[255:128]);
+          $display("                      %h", SHA256_H0[127:  0]);
+          $display("       M            = %h", M_fips1[511:384]);
+          $display("                      %h", M_fips1[383:256]);
+          $display("                      %h", M_fips1[255:128]);
+          $display("                      %h", M_fips1[127:  0]);
+          $display("       H (actual)   = %h", H[255:128]);
+          $display("                      %h", H[127:  0]);
+          $display("       H (expected) = %h", H_fips1[255:128]);
+          $display("                      %h", H_fips1[127:  0]);
 
-      $display("");
-      $display("  H (out):");
-      $display("    %h", H[255:128]);
-      $display("    %h", H[127:  0]);
-      $display("  H (expected):");
-      $display("    %h", H_fips1[255:128]);
-      $display("    %h", H_fips1[127:  0]);
-      $display("");
+          $error("Test case failed.");
+        end
 
       $finish;
     end
