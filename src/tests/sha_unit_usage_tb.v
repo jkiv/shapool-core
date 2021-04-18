@@ -21,14 +21,14 @@ module sha_unit_usage_tb();
   `define VERILATOR
   `define DEBUG_VERBOSE
 
-  `define idx32(x) (32*((x)+1)-1):(32*(x));
-
   // SHA256 constants
-  reg [0:255] SHA256_H0 = { 32'h6a09e667, 32'hbb67ae85,
+  // TODO was reg[0:255]
+  reg [255:0] SHA256_H0 = { 32'h6a09e667, 32'hbb67ae85,
                             32'h3c6ef372, 32'ha54ff53a,
                             32'h510e527f, 32'h9b05688c,
                             32'h1f83d9ab, 32'h5be0cd19 };
 
+  // TODO use SHA256_K.v
   localparam[2047:0] SHA256_K =
     { 32'h428a2f98, 32'h71374491, 32'hb5c0fbcf, 32'he9b5dba5,
       32'h3956c25b, 32'h59f111f1, 32'h923f82a4, 32'hab1c5ed5,
@@ -114,28 +114,42 @@ module sha_unit_usage_tb();
   assign K[62] = SHA256_K[  63:  32];
   assign K[63] = SHA256_K[  31:   0];
 
-  reg [255:0] H0 = 0;
-  reg [255:0] H = 0;
-  reg [511:0] M = 0;
-
   reg clk = 0;
-  reg reset_n = 1;
-  reg en = 0;
-
   reg [5:0] round = 0;
-  reg [31:0] Kt;
+  reg [31:0] Kt = SHA256_K[2047:2016];
 
-  wire [255:0] H_u0;
-  wire [255:0] H_u1;
+  wire [255:0] H;
 
-  sha_unit u0 (
-    clk,
-    round,
-    Kt,
-    M,
-    H0,
-    H_u0
+  sha_unit uut (
+    // Control
+    .clk(clk),
+    // Externally managed/shared state
+    .round(round),
+    .Kt(Kt),
+    // SHA256 parameters
+    .M(M_fips1),
+    .H0(SHA256_H0),
+    // Result
+    .H1(H)
   );
+
+  always
+    begin
+      #1 clk <= !clk;
+    end
+
+  always @(posedge clk)
+    begin
+      if (round == 63)
+        round <= 0;
+      else
+        round <= round + 1;
+    end
+
+  always @(posedge clk)
+    begin
+      Kt <= K[round];
+    end
 
   reg [15:0] i;
 
@@ -146,31 +160,20 @@ module sha_unit_usage_tb();
       $dumpvars;
 
       // Initialize inputs
-      M = M_fips1;
-      H0 = SHA256_H0;
-      round = 0;
-      Kt = K[0];
-      reset_n = 1;
-      clk = 0;
+      round <= 0;
+      Kt <= K[0];
+      clk <= 0;
 
       $display("Test #1 - Block #1:");
       $display("  M:");
-      $display("    %h", M[511:384]);
-      $display("    %h", M[383:256]);
-      $display("    %h", M[255:128]);
-      $display("    %h", M[127:  0]);
+      $display("    %h", M_fips1[511:384]);
+      $display("    %h", M_fips1[383:256]);
+      $display("    %h", M_fips1[255:128]);
+      $display("    %h", M_fips1[127:  0]);
       $display("  H (in):");
-      $display("    %h", H0[255:128]);
-      $display("    %h", H0[127:  0]);
+      $display("    %h", SHA256_H0[255:128]);
+      $display("    %h", SHA256_H0[127:  0]);
       $display("");
-
-      `ifdef DEBUG_VERBOSE
-        $display("[%2d] Kt %h, Wt %h", round, Kt, u0.Wt);
-        $display("[%2d] S0: %h %h %h %h %h %h %h %h", round, u0.S0[255:224], u0.S0[223:192], u0.S0[191:160], u0.S0[159:128], u0.S0[127:96], u0.S0[95:64], u0.S0[63:32], u0.S0[31:0]);
-        $display("[%2d] S1: %h %h %h %h %h %h %h %h", round, u0.S1[255:224], u0.S1[223:192], u0.S1[191:160], u0.S1[159:128], u0.S1[127:96], u0.S1[95:64], u0.S1[63:32], u0.S1[31:0]);
-        $display("[%2d] H0: %h %h %h %h %h %h %h %h", round, u0.H0[255:224], u0.H0[223:192], u0.H0[191:160], u0.H0[159:128], u0.H0[127:96], u0.H0[95:64], u0.H0[63:32], u0.H0[31:0]);
-        $display("[%2d] H1: %h %h %h %h %h %h %h %h", round, u0.H1[255:224], u0.H1[223:192], u0.H1[191:160], u0.H1[159:128], u0.H1[127:96], u0.H1[95:64], u0.H1[63:32], u0.H1[31:0]);
-      `endif
 
       // Clock 64 times 
       for (i = 0; i < 64; i = i + 1)
@@ -178,41 +181,22 @@ module sha_unit_usage_tb();
           
           #1; // rising edge
 
-          fork
-            Kt = K[round];
-            round = round + 1;
-            clk = 1;
-          join
-
           `ifdef DEBUG_VERBOSE
-            $display("[%2d] Kt %h, Wt %h", round, Kt, u0.Wt);
-            $display("[%2d] S0: %h %h %h %h %h %h %h %h", round, u0.S0[255:224], u0.S0[223:192], u0.S0[191:160], u0.S0[159:128], u0.S0[127:96], u0.S0[95:64], u0.S0[63:32], u0.S0[31:0]);
-            $display("[%2d] S1: %h %h %h %h %h %h %h %h", round, u0.S1[255:224], u0.S1[223:192], u0.S1[191:160], u0.S1[159:128], u0.S1[127:96], u0.S1[95:64], u0.S1[63:32], u0.S1[31:0]);
-            $display("[%2d] H0: %h %h %h %h %h %h %h %h", round, u0.H0[255:224], u0.H0[223:192], u0.H0[191:160], u0.H0[159:128], u0.H0[127:96], u0.H0[95:64], u0.H0[63:32], u0.H0[31:0]);
-            $display("[%2d] H1: %h %h %h %h %h %h %h %h", round, u0.H1[255:224], u0.H1[223:192], u0.H1[191:160], u0.H1[159:128], u0.H1[127:96], u0.H1[95:64], u0.H1[63:32], u0.H1[31:0]);
-            /*
-            $display("[%2d] S0: %h", i, u0.S0);
-            $display("[%2d] S1: %h", i, u0.S1);
-            $display("[%2d] H0: %h", i, u0.H0);
-            $display("[%2d] H1: %h", i, u0.H1);
-            */
-            
-            /*
-            $display("[%2d] W:  %h %h %h %h", i,           32{x}, u.W[`idx32(14)], u.W[`idx32(13)], u.W[`idx32(12)]);
-            $display("[%2d]     %h %h %h %h", i, u.W[`idx32(11)], u.W[`idx32(10)], u.W[`idx32( 9)], u.W[`idx32( 8)]);
-            $display("[%2d]     %h %h %h %h", i, u.W[`idx32( 7)], u.W[`idx32( 6)], u.W[`idx32( 5)], u.W[`idx32( 4)]);
-            $display("[%2d]     %h %h %h %h", i, u.W[`idx32( 3)], u.W[`idx32( 2)], u.W[`idx32( 1)], u.W[`idx32( 0)]);
-            */
+            $display("[%2d] Kt %h, Wt %h", round, Kt, uut.Wt);
+            $display("[%2d] S0: %h %h %h %h %h %h %h %h", round, uut.S0[255:224], uut.S0[223:192], uut.S0[191:160], uut.S0[159:128], uut.S0[127:96], uut.S0[95:64], uut.S0[63:32], uut.S0[31:0]);
+            $display("[%2d] S1: %h %h %h %h %h %h %h %h", round, uut.S1[255:224], uut.S1[223:192], uut.S1[191:160], uut.S1[159:128], uut.S1[127:96], uut.S1[95:64], uut.S1[63:32], uut.S1[31:0]);
+            $display("[%2d] H0: %h %h %h %h %h %h %h %h", round, uut.H0[255:224], uut.H0[223:192], uut.H0[191:160], uut.H0[159:128], uut.H0[127:96], uut.H0[95:64], uut.H0[63:32], uut.H0[31:0]);
+            $display("[%2d] H1: %h %h %h %h %h %h %h %h", round, uut.H1[255:224], uut.H1[223:192], uut.H1[191:160], uut.H1[159:128], uut.H1[127:96], uut.H1[95:64], uut.H1[63:32], uut.H1[31:0]);
           `endif
 
-          #1 clk = 0; // falling edge
+          #1; // falling edge
           
         end
 
       $display("");
       $display("  H (out):");
-      $display("    %h", H_u0[255:128]);
-      $display("    %h", H_u0[127:  0]);
+      $display("    %h", H[255:128]);
+      $display("    %h", H[127:  0]);
       $display("  H (expected):");
       $display("    %h", H_fips1[255:128]);
       $display("    %h", H_fips1[127:  0]);

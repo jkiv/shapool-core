@@ -30,7 +30,7 @@ module sha_unit(
   // TODO Mt in block RAM, as input
   wire [31:0] Mt[0:15];
 
-  reg [255:0] S0 = 0;
+  reg [255:0] S0;
   wire [255:0] S1;
 
   w_expand wx(
@@ -41,6 +41,7 @@ module sha_unit(
     Wxt
   );
 
+  // Concurrent SHA256 round module
   sha_round sr(
     S0,
     Kt,
@@ -50,12 +51,18 @@ module sha_unit(
   
   always @(posedge clk)
     begin
-      S0 <= (round == 0) ? H0 : S1;
+      if (round == 0)
+        S0 <= H0;
+      else
+        S0 <= S1;
     end
 
   always @(posedge clk)
     begin
-      Wt <= (round < 16) ? Mt[round] : Wxt;
+      if (round < 16)
+        Wt <= Mt[round];
+      else
+        Wt <= Wxt;
     end
 
   always @(posedge clk)
