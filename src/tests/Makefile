@@ -1,5 +1,11 @@
 # Module test benches
 
+sha_round_usage_tb.out : sha_round_usage_tb.v ../sha_round.v
+	iverilog -o $@  $^
+
+sha_round_usage_tb : sha_round_usage_tb.out
+	vvp $^
+
 sha_unit_usage_tb.out : sha_unit_usage_tb.v ../sha_unit.v ../w_expand.v ../sha_round.v
 	iverilog -o $@  $^
 
@@ -20,7 +26,8 @@ external_io_usage_tb : external_io_usage_tb.out
 
 .phony : clean
 clean :
-	rm -f sha_unit_usage_tb.out \
+	rm -f sha_round_usage_tb.out \
+	      sha_unit_usage_tb.out \
 		  sha_unit_usage_tb.vcd \
 		  external_io_usage_tb.out \
 		  external_io_usage_tb.vcd
