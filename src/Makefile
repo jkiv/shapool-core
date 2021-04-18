@@ -93,12 +93,6 @@ test_sha_unit.out : tests/sha_unit_test.v sha_unit.v sha_round.v w_expand.v
 test_sha_unit : test_sha_unit.out
 	vvp $^
 
-test_external_io.out : tests/external_io_test.v external_io.v
-	iverilog -o $@  $^
-
-test_external_io : test_external_io.out
-	vvp $^
-
 # Miscellaneous tests...
 
 burn_power_test: tests/hx8k-b-evn/top_power.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
@@ -152,22 +146,6 @@ shapool.svg : shapool.dot
 
 # Cleanup...
 
-clean_tests :
-	rm -f test_top.out \
-		  test_top.vcd \
-	      test_multi_top.out \
-	      test_shapool.out \
-		  test_sha_unit.out \
-		  test_external_out.vcd \
-		  test_external_io.vcd \
-		  top_power.blif top_power.asc top_power.bin \
-	      top_idle.blif top_idle.asc top_idle.bin \
-	      top_RAM.blif top_RAM.asc top_RAM.bin \
-	      top_tri.blif top_tri.asc top_tri.bin \
-	      top_single_39.blif top_single_39.asc top_single_39.bin
-
-.phony: clean_tests
-
 clean_build :
 	rm -f shapool_*.out \
 		  shapool_*.blif \
@@ -182,10 +160,6 @@ clean_helpers :
 
 .phony: clean_helpers
 
-clean: clean_build clean_tests clean_helpers
+clean: clean_build clean_helpers
 
 .phony: clean
-
-default:
-	echo 'TODO message here about targets'
-	echo ''

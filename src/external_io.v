@@ -65,12 +65,12 @@ module external_io(
     reg [2:0] sck1_sync = 0;
     wire sck1_sync_rising_edge;
 
-    always @(posedge clk)
+    always @(posedge clk, negedge reset_n)
       begin
         sck0_sync <= { sck0_sync[1:0], sck0 };
       end
 
-    always @(posedge clk)
+    always @(posedge clk, negedge reset_n)
       begin
         sck1_sync <= { sck1_sync[1:0], sck1 };
       end
@@ -82,7 +82,7 @@ module external_io(
     // TODO "rising edge" signal for sck0, sck1
 
     // State machine process
-    always @(posedge clk)
+    always @(posedge clk, negedge reset_n)
       begin
         if (!reset_n)
           begin
@@ -129,10 +129,10 @@ module external_io(
       end
 
     // SPI0 process
-    always @(posedge clk)
+    always @(posedge sck0_sync_rising_edge)
       begin
         // If rising edge of sck0 and cs0_n asserted:
-        if (sck0_sync_rising_edge && !cs0_n)
+        if (!cs0_n)
           begin
             if (state == STATE_IDLE)
               begin
@@ -143,15 +143,15 @@ module external_io(
       end
 
     // SPI1 process
-    always @(posedge clk)
+    always @(posedge sck1_sync_rising_edge)
       begin
         // If rising edge sck1 and cs1_n asserted:
-        if (sck1_sync_rising_edge && !cs1_n)
+        if (!cs1_n)
           begin
             if (state == STATE_IDLE)
               begin
-                  // Shift config data (msb-first)
-                  device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
+                // Shift config data (msb-first)
+                device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
               end
             else if (state == STATE_DONE)
               begin

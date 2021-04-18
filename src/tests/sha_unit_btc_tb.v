@@ -1,5 +1,9 @@
-module sha_unit_test();
+module sha_unit_usage_tb();
 
+  /* Tests basic usage of `sha_unit`.
+  */
+
+  `define VERILATOR
   `define DEBUG_VERBOSE
 
   `define idx32(x) (32*((x)+1)-1):(32*(x));

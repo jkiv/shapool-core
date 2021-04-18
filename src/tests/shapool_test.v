@@ -1,3 +1,5 @@
+`timescale 10ns/100ps
+
 module shapool_test();
 
   `define VERILATOR // for testing

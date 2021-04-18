@@ -27,6 +27,7 @@ module sha_unit(
   wire [31:0] Wxt;
 
   // Message as 16x 32-bit blocks
+  // TODO Mt in block RAM, as input
   wire [31:0] Mt[0:15];
 
   reg [255:0] S0 = 0;
@@ -46,18 +47,15 @@ module sha_unit(
     Wt,
     S1
   );
- 
+  
   always @(posedge clk)
     begin
-      if (round == 0)
-        S0 <= H0;
-      else
-        S0 <= S1;
+      S0 <= (round == 0) ? H0 : S1;
     end
 
   always @(posedge clk)
     begin
-      Wt <= (round < 16) ? Mt[round[3:0]] : Wxt;
+      Wt <= (round < 16) ? Mt[round] : Wxt;
     end
 
   always @(posedge clk)

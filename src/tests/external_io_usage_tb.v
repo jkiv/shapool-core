@@ -1,10 +1,11 @@
 `timescale 10ns/100ps
 
-module test_top();
+module external_io_usage_tb();
 
   `define VERILATOR
+  `define DEBUG_VERBOSE
 
-  localparam spi_bit_half_period = 3;
+  localparam spi_bit_half_period = 4;
   localparam reset_hold_period = 2;
 
   localparam JOB_CONFIG_WIDTH = 8;
@@ -77,7 +78,7 @@ module test_top();
   initial
     begin
 
-      $dumpfile("test_external_io.vcd");
+      $dumpfile("external_io_usage_tb.vcd");
       $dumpvars;
 
       // Initial states
@@ -120,7 +121,6 @@ module test_top();
         end
 
       cs0_n = 1;
-      reset_n = 1;
       #10;
 
       // TODO assert
@@ -128,9 +128,6 @@ module test_top();
       ///////////////////////////////////////////////
       // Test SPI1 (clock in device configuration) //
       ///////////////////////////////////////////////
-
-      reset_n = 0;
-      #reset_hold_period;
 
       // (SPI Mode 0,0)
       cs1_n = 0;
