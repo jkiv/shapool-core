@@ -49,8 +49,10 @@ module shapool
     reg [5:0] round = 0;
 
     // Supress some logic during first and second hash
-    reg skip_first = 0;
-    reg skip_second = 0;
+    // - `first_hash_complete` allows us to supress logic before first hash completes.
+    // - `second_hash_complete` allows us to supress logic before second hash completes.
+    reg first_hash_complete = 0;
+    reg second_hash_complete = 0;
 
     localparam[255:0] SHA256_H0 = 
     { 32'h6a09e667, 32'hbb67ae85,
@@ -65,10 +67,6 @@ module shapool
       round,
       Kt
     );
-
-    assign success = (|match_flags)
-                     & (round == 1)
-                     & (!skip_second);
 
     localparam [383:0] M0_tail = {
         128'h80000000_00000000_00000000_00000000,
@@ -91,7 +89,7 @@ module shapool
         wire [255:0] H_u1;
 
         // Saved bits from H_u0
-        reg [223:0] M1_H1 = 0;
+        reg [223:0] M1_H1;
 
         // Byte-swapped H_u1 for testing
         /* verilator lint_off UNUSED */
@@ -99,7 +97,7 @@ module shapool
         /* verilator lint_on UNUSED */
 
         // Saved bits from H_bs
-        reg [BASE_DIFFICULTY+16-1:0] H = 0;
+        //reg [BASE_DIFFICULTY+16-1:0] H = 0;
 
 `ifndef SHAPOOL_NO_NONCE_OFFSET
         // Hard-coded unit offset
@@ -128,13 +126,22 @@ module shapool
           H_u0
         );
 
+        // Save `H_u0` (output of first stage) for use in `M1_H1`.
+        // Bits `H_u0[255:224]` are used by `u1` at the same moment and sent directly to input,
+        // so we don't need to store them in M1_H1.
+        always @(posedge clk)
+          begin
+            if (round == 0)
+              M1_H1 <= H_u0[223:0];
+          end
+
         sha_unit u1(
           clk,
           round,
           Kt,
-          // H_u0[255:224] is needed as soon as it is available, when round
-          // goes from 0 to 1. At the same instant, the rest of H_u0 is stored
-          // in M1_H1 for use in subsequent rounds.
+          // `H_u0[255:224]` is needed as soon as it is available, when `round`
+          // goes from `0` to `1`. At the same instant, the rest of `H_u0` is stored
+          // in `M1_H1` for use in subsequent rounds.
           { H_u0[255:224], M1_H1, M1_tail },
           SHA256_H0,
           H_u1
@@ -152,44 +159,41 @@ module shapool
                         H_u1[199:192], H_u1[207:200], H_u1[215:208], H_u1[223:216],
                         H_u1[231:224], H_u1[239:232], H_u1[247:240], H_u1[255:248] };
 
-        // Save H_u0 output of first stage for use in M1
-        always @(posedge clk)
-          begin
-            if (round == 0)
-              M1_H1 <= H_u0[223:0];
-          end
-
-        // Save H_bs to test over subsequent cycle(s)
-        always @(posedge clk)
-          begin
-            if (round == 0)
-              H <= H_bs[255:256-BASE_DIFFICULTY-16];
-          end
-
         // Test leading zeros only
         // -- higher difficulty
-        // -- simpler implementation
-        assign match_flags[n] = ~(|{H[BASE_DIFFICULTY+16-1:16], H[15:0] & difficulty_bm});
+        // -- simpler implementation (TODO check?)
+        assign match_flags[n] = ~(|{H_bs[255:256-BASE_DIFFICULTY], H_bs[255-BASE_DIFFICULTY:254-(BASE_DIFFICULTY+16)] & difficulty_bm});
 
+        // Save H_bs to test over subsequent cycle(s)
+        /*
+        always @(posedge clk)
+          begin
+            if (round == 0)
+              H <= H_bs[255:256-(BASE_DIFFICULTY+16)];
+          end
+        */
+        // TODO can we avoid this per track (BASE_DIFFICULTY+16-bit register)
       end
     endgenerate
+
+    assign success = (|match_flags) & second_hash_complete & (round == 0);
 
     // Control skip_first flag
     always @(posedge clk)
       begin
         if (!reset_n)
-          skip_first <= 1;
-        else if (round == 1)
-          skip_first <= 0;
+          first_hash_complete <= 0;
+        else if (round == 63 && !first_hash_complete)
+          first_hash_complete <= 1;
       end
 
     // Control skip_second flag
     always @(posedge clk)
       begin
         if (!reset_n)
-          skip_second <= 1;
-        else if (round == 1 && !skip_first)
-          skip_second <= 0;
+          second_hash_complete <= 0;
+        else if (round == 63 && first_hash_complete)
+          second_hash_complete <= 1;
       end
 
     always @(posedge clk)
@@ -204,10 +208,7 @@ module shapool
       begin
         if (!reset_n)
           nonce <= nonce_start;
-        else if (round == 1 && !skip_first)
-          // Compare would have round == 0, but nonce value not needed until
-          // round == 3, so hopefully some real-estate can be saved by reusing
-          // logic, since this logic evaluation appears elsewhere
+        else if (round == 0)
           nonce <= nonce + 1;
       end
   

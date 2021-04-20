@@ -2,6 +2,10 @@
 
 module external_io_usage_tb();
 
+  /*
+    Tests basic usage of `external_io` module.
+  */
+
   `define VERILATOR
   `define DEBUG_VERBOSE
 
