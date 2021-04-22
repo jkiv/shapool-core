@@ -18,6 +18,7 @@ module shapool
     parameter POOL_SIZE_LOG2 = 0;
     parameter BASE_DIFFICULTY = 64;
     
+    // How big of a counter for `nonce` do we need?
     localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
 
     /* Inputs/Outputs
@@ -36,9 +37,9 @@ module shapool
     output wire success;
     output reg [NONCE_WIDTH-1:0] nonce = 0;
 
-    // Expand "nonce_start_MSB" to same size as nonce register
+    // Expand `nonce_start_MSB` to same size as `nonce`
     wire [NONCE_WIDTH-1:0] nonce_start;
-    assign nonce_start = { nonce_start_MSB, {(NONCE_WIDTH-8){1'b0}}};
+    assign nonce_start = { nonce_start_MSB, {(NONCE_WIDTH-8){1'b0}} };
 
     // Per-unit match flags
     wire [POOL_SIZE-1:0] match_flags;
@@ -93,11 +94,10 @@ module shapool
 
         // Byte-swapped H_u1 for testing
         /* verilator lint_off UNUSED */
-        wire [255:0] H_bs;
+        wire [255:0] H_u1_swap;
         /* verilator lint_on UNUSED */
 
-        // Saved bits from H_bs
-        //reg [BASE_DIFFICULTY+16-1:0] H = 0;
+        wire [BASE_DIFFICULTY+16-1:0] H_test_bits;
 
 `ifndef SHAPOOL_NO_NONCE_OFFSET
         // Hard-coded unit offset
@@ -108,6 +108,15 @@ module shapool
         assign nonce_offset = n;
 `endif
 
+        // Nonce space segmenting issues arise when not all devices
+        // have the same `POOL_SIZE`/`POOL_SIZE_LOG2`.
+        // TODO address later?
+        // TODO currently, they will. (same bitstream)
+
+        // 32-bit nonce:
+        // [nonce_offset (POOL_SIZE_LOG 2)][nonce_start (NONCE_WIDTH)]
+
+        // SHA256 unit for first hash
         sha_unit u0(
           clk,
           round,
@@ -121,7 +130,8 @@ module shapool
             nonce_offset,
 `endif
             nonce[NONCE_WIDTH-1:24],
-            M0_tail },
+            M0_tail
+          },
           sha_state,
           H_u0
         );
@@ -135,6 +145,7 @@ module shapool
               M1_H1 <= H_u0[223:0];
           end
 
+        // SHA256 unit for second hash
         sha_unit u1(
           clk,
           round,
@@ -150,35 +161,35 @@ module shapool
         // Byte-swap hash result for valid comparison
         // -- Depending on difficulty, lower bits may not be used. Hopefully
         //    logic for generating superfluous bits are optimized out.
-        assign H_bs = { H_u1[  7:  0], H_u1[ 15:  8], H_u1[ 23: 16], H_u1[ 31: 24],
-                        H_u1[ 39: 32], H_u1[ 47: 40], H_u1[ 55: 48], H_u1[ 63: 56],
-                        H_u1[ 71: 64], H_u1[ 79: 72], H_u1[ 87: 80], H_u1[ 95: 88],
-                        H_u1[103: 96], H_u1[111:104], H_u1[119:112], H_u1[127:120],
-                        H_u1[135:128], H_u1[143:136], H_u1[151:144], H_u1[159:152],
-                        H_u1[167:160], H_u1[175:168], H_u1[183:176], H_u1[191:184],
-                        H_u1[199:192], H_u1[207:200], H_u1[215:208], H_u1[223:216],
-                        H_u1[231:224], H_u1[239:232], H_u1[247:240], H_u1[255:248] };
+        assign H_u1_swap = { H_u1[  7:  0], H_u1[ 15:  8], H_u1[ 23: 16], H_u1[ 31: 24],
+                             H_u1[ 39: 32], H_u1[ 47: 40], H_u1[ 55: 48], H_u1[ 63: 56],
+                             H_u1[ 71: 64], H_u1[ 79: 72], H_u1[ 87: 80], H_u1[ 95: 88],
+                             H_u1[103: 96], H_u1[111:104], H_u1[119:112], H_u1[127:120],
+                             H_u1[135:128], H_u1[143:136], H_u1[151:144], H_u1[159:152],
+                             H_u1[167:160], H_u1[175:168], H_u1[183:176], H_u1[191:184],
+                             H_u1[199:192], H_u1[207:200], H_u1[215:208], H_u1[223:216],
+                             H_u1[231:224], H_u1[239:232], H_u1[247:240], H_u1[255:248] };
+
+        // Bits of result we care about
+        assign H_test_bits = {
+          // bits from BASE_DIFFICULTY
+          H_u1_swap[255:256-BASE_DIFFICULTY],
+          // bits from `difficulty` parameter
+          H_u1_swap[256-BASE_DIFFICULTY-1:256-BASE_DIFFICULTY-16] & difficulty_bm
+        };
 
         // Test leading zeros only
         // -- higher difficulty
-        // -- simpler implementation (TODO check?)
-        assign match_flags[n] = ~(|{H_bs[255:256-BASE_DIFFICULTY], H_bs[255-BASE_DIFFICULTY:254-(BASE_DIFFICULTY+16)] & difficulty_bm});
+        // -- simpler implementation
+        assign match_flags[n] = ~(|H_test_bits);
 
-        // Save H_bs to test over subsequent cycle(s)
-        /*
-        always @(posedge clk)
-          begin
-            if (round == 0)
-              H <= H_bs[255:256-(BASE_DIFFICULTY+16)];
-          end
-        */
-        // TODO can we avoid this per track (BASE_DIFFICULTY+16-bit register)
       end
     endgenerate
 
+    // Generate `success` flag from the set of `match_flag`s
     assign success = (|match_flags) & second_hash_complete & (round == 0);
 
-    // Control skip_first flag
+    // Control `first_hash_complete` flag
     always @(posedge clk)
       begin
         if (!reset_n)
@@ -187,7 +198,7 @@ module shapool
           first_hash_complete <= 1;
       end
 
-    // Control skip_second flag
+    // Control `second_hash_complete` flag
     always @(posedge clk)
       begin
         if (!reset_n)
@@ -196,6 +207,7 @@ module shapool
           second_hash_complete <= 1;
       end
 
+    // Control `round`
     always @(posedge clk)
       begin
         if (!reset_n)
@@ -204,6 +216,7 @@ module shapool
           round <= round + 1; // mod 63 
       end
   
+    // Control `nonce`
     always @(posedge clk)
       begin
         if (!reset_n)

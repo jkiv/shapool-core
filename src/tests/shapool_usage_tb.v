@@ -133,10 +133,10 @@ module shapool_test();
       
       #2; // one clock cycle, RESET -> EXEC
 
-      for (n = 0; n < 1000 && !success; n = n + 1)
+      for (n = 0; n < 50 && !success; n = n)
         begin
 
-          for (i = 0; i < 64; i = i + 1)
+          for (i = 0; i < 64 && !success; i = i + 1)
             begin
               #1; // rising edge
               #1; // falling edge
@@ -161,11 +161,11 @@ module shapool_test();
                 $display("       %h", uut.tracks[0].H_u1[127:  0]);
                 $display("");
               `endif
-
             end
+
         end
 
-        if (success == 1 && nonce == nonce_expected && uut.tracks[0].H_u1 == H_expected)
+        if (success == 1 && nonce - 1 == nonce_expected && uut.tracks[0].H_u1 == H_expected)
           begin
             // TODO Success
             $display("\033\133\063\062\155[PASS]\033\133\060\155 `shapool`, single track, BTC four-zeroes");
