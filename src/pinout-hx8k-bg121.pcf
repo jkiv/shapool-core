@@ -6,7 +6,7 @@
 set_io clk_in F11
 
 # External asynchronous reset
-set_io reset_n_in J1 # was R/W
+set_io reset_n_in J1
 
 # SPI0 (Shared SPI interface)
 set_io sck0_in L10
@@ -21,7 +21,7 @@ set_io sdo1_out K1
 set_io cs1_n_in H1
 
 # READY host interrupt
-set_io ready_n_ts_inout B1
+set_io ready_n_ts_out B1
 
 # Status/Heartbeat LED
 set_io status_led_n_out A11

@@ -19,7 +19,10 @@ module external_io(
     job_config,
     // From shapool
     shapool_result,
-    shapool_success
+    shapool_success,
+    // READY signal
+    // TODO ready_in, ready_out
+    ready
 );
 
     parameter JOB_CONFIG_WIDTH = 1;
@@ -37,7 +40,7 @@ module external_io(
 
     input wire sck1;
     input wire sdi1;
-    output wire sdo1;
+    output reg sdo1;
     input wire cs1_n; 
 
     // Stored data
@@ -48,6 +51,9 @@ module external_io(
     // From shapool
     input wire [RESULT_DATA_WIDTH-1 : 0] shapool_result;
     input wire shapool_success;
+
+    // READY signal
+    output reg ready;
 
     // State machine definition
     localparam STATE_IDLE = 2'b00,
@@ -64,108 +70,112 @@ module external_io(
     
     reg [2:0] sck1_sync = 0;
     wire sck1_sync_rising_edge;
+    wire sck1_sync_falling_edge;
 
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         sck0_sync <= { sck0_sync[1:0], sck0 };
       end
 
-    always @(posedge clk, negedge reset_n)
+    assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
+
+    always @(posedge clk)
       begin
         sck1_sync <= { sck1_sync[1:0], sck1 };
       end
 
-    assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
     assign sck1_sync_rising_edge = !sck1_sync[2] & sck1_sync[1];
+    assign sck1_sync_falling_edge = sck1_sync[2] & !sck1_sync[1];
 
     // TODO sdi0, sdi1
-    // TODO "rising edge" signal for sck0, sck1
 
-    // State machine process
+    // Main state machine process
     always @(posedge clk, negedge reset_n)
       begin
         if (!reset_n)
           begin
             state <= STATE_IDLE;
-            
-            result_data <= {(RESULT_DATA_WIDTH){1'b0}};
+            sdo1 <= 1'b0;
           end
         else
           begin
+
             case(state)
+
               STATE_IDLE:
+                
+                // Go to STATE_EXEC when `reset_n` is deasserted
                 if (reset_n)
-                  begin
                     state <= STATE_EXEC;
+
+                // Allow `job_config` and `device_config` to be shifted in while `reset_n` is asserted.
+                else
+                  begin
+
+                    // Shift in `job_config` (msb-first) on rising edge
+                    if (!cs0_n && sck0_sync_rising_edge)
+                      job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
+                    
+                    // Shift in `device_config` (msb-first) on rising edge
+                    if (!cs1_n && sck1_sync_rising_edge)
+                      device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
+
+                    // Shift out `device_config` (msb-first) on falling edge
+                    if (!cs1_n && sck1_sync_falling_edge)
+                      sdo1 <= device_config[DEVICE_CONFIG_WIDTH-1];
+
                   end
+
               STATE_EXEC:
+
                 if (shapool_success)
                   begin
-                    state <= STATE_DONE;
                     
                     /* verilator lint_off WIDTHCONCAT */
 
                     // NOTE: The top POOL_SIZE_LOG2 bits are zeroed.
                     //       Host needs to perform check on all possible combination
                     //       of these bits.
-                    // TODO eliminate the need for this ^
 
-                    // NOTE: Success occurred a previous nonce.
-                    //       By the time nonce is saved, the hash is for the value
-                    //       of nonce - 1. In order to save resources, the host is
-                    //       responsible for correcting this offset. 
-                    // TODO eliminate the need for this ^
+                    // NOTE: When "success" occurs, the current nonce value is
+                    //       one value ahead of the nonce value that caused the success.
+                    //       This is because the nonce value feeds the first hash unit,
+                    //       whereas success is determined by the result of the
+                    //       second.
+                    //       In order to save resources, the host is responsible for
+                    //       correcting this offset. 
                     result_data <= shapool_result;
-                    // TODO actual winning nonce
-
+                    sdo1 <= shapool_result[RESULT_DATA_WIDTH-1];
+                    state <= STATE_DONE;
                     /* verilator lint_on WIDTHCONCAT */
                   end
+                // TODO ready_neighbour signal OR cs1_n, go to DONE?
+                else if (!cs1_n)
+                  begin
+                    result_data <= {(RESULT_DATA_WIDTH){1'b0}};
+                    sdo1 <= 1'b0;
+                    state <= STATE_DONE;
+                  end
+
               STATE_DONE:
-                state <= STATE_DONE;
+                begin
+                  state <= STATE_DONE;
+
+                  // Shift-in `result_data` (msb-first) on rising edge
+                  if (!cs1_n && sck1_sync_rising_edge)
+                    result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1 };
+
+                  // Shift-out `result_data` (msb-first) on falling edge
+                  if (!cs1_n && sck1_sync_falling_edge)
+                    sdo1 <= result_data[RESULT_DATA_WIDTH-1];
+                  
+                end
+
               default:
                 state <= STATE_IDLE;
+
             endcase
           end
       end
-
-    // SPI0 process
-    always @(posedge sck0_sync_rising_edge)
-      begin
-        // If rising edge of sck0 and cs0_n asserted:
-        if (!cs0_n)
-          begin
-            if (state == STATE_IDLE)
-              begin
-                // Shift in data msb-first
-                job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
-              end
-          end
-      end
-
-    // SPI1 process
-    always @(posedge sck1_sync_rising_edge)
-      begin
-        // If rising edge sck1 and cs1_n asserted:
-        if (!cs1_n)
-          begin
-            if (state == STATE_IDLE)
-              begin
-                // Shift config data (msb-first)
-                device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
-              end
-            else if (state == STATE_DONE)
-              begin
-                // Shift result data (msb-first)
-                result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1 };
-              end
-          end
-      end
-
-      // FIXME might need to shift out sdo1 on cs1_n falling edge, and sck1 falling edge
-      //       as per SPI mode 0,0. For now I'm OK with sdo1 changing immediately after
-      //       sampling/rising edge.
-      assign sdo1 = (state == STATE_IDLE) ? device_config[DEVICE_CONFIG_WIDTH-1] :
-                    (state == STATE_DONE) ? result_data[RESULT_DATA_WIDTH-1] :
-                    1'b0;
 
 endmodule

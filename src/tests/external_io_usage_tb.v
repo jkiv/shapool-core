@@ -33,6 +33,8 @@ module external_io_usage_tb();
   // From shapool
   reg [RESULT_DATA_WIDTH-1:0] shapool_result;
   reg shapool_success;
+  // READY signal
+  wire ready;
 
   external_io
   #(.JOB_CONFIG_WIDTH(DEVICE_CONFIG_WIDTH),
@@ -55,7 +57,9 @@ module external_io_usage_tb();
     job_config,
     // From shapool
     shapool_result,
-    shapool_success
+    shapool_success,
+    // READY signal
+    ready
   );
 
   // Test case
@@ -186,7 +190,15 @@ module external_io_usage_tb();
       cs1_n = 1;
       #reset_hold_period;
 
-      // TODO assert
+      if (1) // TODO condition
+          begin
+            $display("\033\133\063\062\155[PASS]\033\133\060\155 `external_io`");
+          end
+        else
+          begin
+            $display("\033\133\063\061\155[FAIL]\033\133\060\155 `external_io`");
+            $error("Test case failed.");
+          end
 
       #100;
       $finish;

@@ -95,6 +95,18 @@ test_sha_unit : test_sha_unit.out
 
 # Miscellaneous tests...
 
+burn_basic_test: top_basic.v top.v external_io.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
+	yosys -p 'synth_ice40 -top top_basic -json top_basic.json -abc2 -retime' $^
+	nextpnr-ice40 --package bg121 --hx8k --json top_basic.json --pcf pinout-hx8k-bg121.pcf --asc top_basic.asc
+	icepack top_basic.asc top_basic.bin 
+	iceprog top_basic.bin 
+
+icepool_test.asc : icepool_test.json pinout.pcf
+	#arachne-pnr -d 8k -P ct256 -o $@ -p pinout.pcf icepool_test.blif
+
+
+# VVV obsolete TODO remove
+
 burn_power_test: tests/hx8k-b-evn/top_power.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v
 	yosys -p 'synth_ice40 -top top_power -blif top_power.blif -abc2' $^ 
 	arachne-pnr -d 8k -p ct256 -o top_power.asc -p tests/hx8k-b-evn/top_power.pcf top_power.blif
