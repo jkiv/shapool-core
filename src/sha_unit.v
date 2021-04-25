@@ -60,7 +60,7 @@ module sha_unit(
   always @(posedge clk)
     begin
       if (round < 16)
-        Wt <= Mt[round];
+        Wt <= Mt[round[3:0]];
       else
         Wt <= Wxt;
     end
