@@ -20,7 +20,7 @@ reset_n -->|               |--> status_led_n
    sck0 -->|               |
    sdi0 -->|     SPI 0     |
   cs0_n -->|               |
-		   |               |
+           |               |
    sck1 -->|               |
    sdi1 -->|     SPI 1     |--> sdo1
   cs1_n -->|               |
