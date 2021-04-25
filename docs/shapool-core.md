@@ -83,7 +83,7 @@ Job configuration data can be written to the device using SPI interface 0 while 
 
 This is done as often as required, e.g. after completed or expired jobs.
 
-<img src="https://svg.wavedrom.com/{reg:[{name: 'difficulty offset', bits: 8},{name: 'message head', bits: 96},{name: 'SHA256 state', bits: 256}],config:{bits: 360, lanes: 12}}" />
+<img src="https://svg.wavedrom.com/{reg:[{name: 'difficulty offset', bits: 4},{name: '(unused)', bits: 4, type: 1},{name: 'message head', bits: 96},{name: 'SHA256 state', bits: 256}],config:{bits: 360, lanes: 12}}" />
 
 
 
