@@ -1,24 +1,19 @@
-SHAPOOL_DIR = ../../
-
 # Make all
 .phony: all
-all: top_basic.bin
+all: icepool-ice40hx8k ice40hx8k-b-evn
 
 # Clean up
 .phony: clean
 clean:
-	rm -f *.json *.asc *.bin
+	make -C ice40hx8k-b-evn/ clean
+	make -C icepool-ice40hx8k/ clean
 
-# top_basic
+.phony: icepool-ice40hx8k
+icepool-ice40hx8k:
+	make -C icepool-ice40hx8k/ all
 
-top_basic.json : top_basic.v ../../top.v ../../external_io.v ../../shapool.v ../../sha_unit.v ../../sha_round.v ../../w_expand.v ../../SHA256_K.v ../../difficulty_map.v
-	yosys -p 'synth_ice40 -top top_basic -json top_basic.json -abc2 -retime' $^
+.phony: ice40hx8k-b-evn
+ice40hx8k-b-evn:
+	make -C ice40hx8k-b-evn/ all
 
-top_basic.asc: top_basic.json ../../pinout-ice40-hx8k-bg121.pcf
-	nextpnr-ice40 --package bg121 --hx8k --json top_basic.json --pcf ../../pinout-ice40-hx8k-bg121.pcf --asc top_basic.asc
-
-top_basic.bin: top_basic.asc
-	icepack top_basic.asc top_basic.bin
-
-burn_top_basic: top_basic.bin
-	iceprog top_basic.bin
+# TODO ice40up5k-b-evn
