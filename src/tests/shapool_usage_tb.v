@@ -9,7 +9,7 @@ module shapool_test();
   */
 
   `define VERILATOR
-  `define DEBUG_VERBOSE
+  //`define DEBUG_VERBOSE
 
   `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1
 

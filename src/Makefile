@@ -73,12 +73,18 @@ lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_m
 
 .phony: lint
 
+# Test benches
+
+.phony: test
+test:
+	make -C test/ all
+
 # Clean up
 
 .phony: clean_build
 clean_build :
 	rm -f shapool-*.out \
-		  shapool-*.blif \
+		  shapool-*.json \
 		  shapool-*.asc \
 		  shapool-*.bin
 
