@@ -14,7 +14,7 @@ This project aims to support multiple targets including
 * [jkiv/icepool-board](https://github.com/jkiv/icepool-board)
 * ... and others.
 
-Support for [ECP5](https://www.latticesemi.com/Products/FPGAandCPLD/ECP5) boards using the [Project Trellis](https://github.com/YosysHQ/prjtrellis) open-source toolchain is [planned](https://github.com/jkiv/shapool-core/tree/ecp5) as well.
+Support for [ECP5](https://www.latticesemi.com/Products/FPGAandCPLD/ECP5) boards using the [Project Trellis](https://github.com/YosysHQ/prjtrellis) open-source toolchain is [planned](https://github.com/jkiv/shapool-core/issues/5) as well.
 
 Please consider supporting this project and others like it by donating:
 
