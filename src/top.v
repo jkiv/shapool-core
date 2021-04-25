@@ -127,6 +127,9 @@ module top
     // Whether any unit on this device was successful
     wire success;
 
+    // Whether or not to drive `ready_n_ts_out` low (1) or keep high-impedance (0).
+    wire ready;
+
     // Nonce result
     wire [NONCE_WIDTH-1:0] nonce;
 
@@ -152,7 +155,9 @@ module top
       { sha_state, message_head, difficulty },
       // From shapool
       { {(POOL_SIZE_LOG2){1'b0}}, nonce }, // FIXME host needs to make POOL_SIZE_LOG2 checks
-      success
+      success,
+      // READY signal
+      ready
     );
 
     // Difficulty bitmask lookup
@@ -162,7 +167,7 @@ module top
     wire [15:0] difficulty_bitmask;
     difficulty_map dm (
       g_clk,
-      ~g_reset_n, // en
+      1'b1, // en
       difficulty[3:0],
       difficulty_bitmask
     );
@@ -186,18 +191,8 @@ module top
       nonce
     );
 
-    reg ready;
-
-    always @(posedge clk, negedge reset_n)
-      begin
-        if (reset_n == 1'b0)
-          ready <= 0;
-        else
-          ready <= success;
-      end
-
     assign ready_n_ts_out = ready ? 1'b0 : 1'bz;
 
-    assign status_led_n_out = (!ready | cs0_n_in | cs1_n_in | reset_n) & (sck1_in | sck0_in);
+    assign status_led_n_out = !((ready | !cs0_n_in | !cs1_n_in) & (sck1_in | sck0_in));
 
 endmodule

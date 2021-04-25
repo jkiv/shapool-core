@@ -21,7 +21,6 @@ module external_io(
     shapool_result,
     shapool_success,
     // READY signal
-    // TODO ready_in, ready_out
     ready
 );
 
@@ -96,6 +95,7 @@ module external_io(
           begin
             state <= STATE_IDLE;
             sdo1 <= 1'b0;
+            ready <= 1'b0;
           end
         else
           begin
@@ -103,34 +103,38 @@ module external_io(
             case(state)
 
               STATE_IDLE:
-                
-                // Go to STATE_EXEC when `reset_n` is deasserted
-                if (reset_n)
-                    state <= STATE_EXEC;
+                begin
+                  ready <= 1'b0;
 
-                // Allow `job_config` and `device_config` to be shifted in while `reset_n` is asserted.
-                else
-                  begin
+                  // Go to STATE_EXEC when `reset_n` is deasserted
+                  if (reset_n)
+                      state <= STATE_EXEC;
 
-                    // Shift in `job_config` (msb-first) on rising edge
-                    if (!cs0_n && sck0_sync_rising_edge)
-                      job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
-                    
-                    // Shift in `device_config` (msb-first) on rising edge
-                    if (!cs1_n && sck1_sync_rising_edge)
-                      device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
+                  // Allow `job_config` and `device_config` to be shifted in while `reset_n` is asserted.
+                  else
+                    begin
 
-                    // Shift out `device_config` (msb-first) on falling edge
-                    if (!cs1_n && sck1_sync_falling_edge)
-                      sdo1 <= device_config[DEVICE_CONFIG_WIDTH-1];
+                      // Shift in `job_config` (msb-first) on rising edge
+                      if (!cs0_n && sck0_sync_rising_edge)
+                        job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
+                      
+                      // Shift in `device_config` (msb-first) on rising edge
+                      if (!cs1_n && sck1_sync_rising_edge)
+                        device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
 
-                  end
+                      // Shift out `device_config` (msb-first) on falling edge
+                      if (!cs1_n && sck1_sync_falling_edge)
+                        sdo1 <= device_config[DEVICE_CONFIG_WIDTH-1];
 
+                    end
+                end
               STATE_EXEC:
 
                 if (shapool_success)
                   begin
-                    
+                    state <= STATE_DONE;
+                    ready <= 1'b1;
+
                     /* verilator lint_off WIDTHCONCAT */
 
                     // NOTE: The top POOL_SIZE_LOG2 bits are zeroed.
@@ -146,21 +150,19 @@ module external_io(
                     //       correcting this offset. 
                     result_data <= shapool_result;
                     sdo1 <= shapool_result[RESULT_DATA_WIDTH-1];
-                    state <= STATE_DONE;
                     /* verilator lint_on WIDTHCONCAT */
                   end
                 // TODO ready_neighbour signal OR cs1_n, go to DONE?
                 else if (!cs1_n)
                   begin
+                    state <= STATE_DONE;
+                    
                     result_data <= {(RESULT_DATA_WIDTH){1'b0}};
                     sdo1 <= 1'b0;
-                    state <= STATE_DONE;
                   end
 
               STATE_DONE:
                 begin
-                  state <= STATE_DONE;
-
                   // Shift-in `result_data` (msb-first) on rising edge
                   if (!cs1_n && sck1_sync_rising_edge)
                     result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1 };
@@ -168,7 +170,7 @@ module external_io(
                   // Shift-out `result_data` (msb-first) on falling edge
                   if (!cs1_n && sck1_sync_falling_edge)
                     sdo1 <= result_data[RESULT_DATA_WIDTH-1];
-                  
+
                 end
 
               default:
