@@ -12,6 +12,12 @@
 ##	yosys -p 'synth_ice40 -top top_basic -json top_basic.json -abc2 -retime' $^
 ##	nextpnr-ice40 --package bg121 --hx8k --json top_basic.json --pcf ../../pinout-hx8k-bg121.pcf --asc top_basic.asc
 
+# Build all bitstreams
+
+.phony: all
+
+all: shapool-ice40-hx8k-ct256.bin shapool-ice40-hx8k-bg121.bin shapool-ice40-up5k-sg48.bin
+
 # Synthesize for device
 
 shapool-ice40-hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
@@ -32,7 +38,6 @@ shapool-ice40-up5k-sg48.asc : shapool-ice40-up5k.json pinout-ice40-up5k-sg48.pcf
 	nextpnr-ice40 --package sg48 --up5k --json shapool-ice40-up5k.json --pcf pinout-ice40-up5k-sg48.pcf --asc $@
 
 # Generate bitstream
-
 shapool-ice40-hx8k-ct256.bin : shapool-ice40-hx8k-ct256.asc
 	icepack $^ $@
 
@@ -57,6 +62,7 @@ time-ice40-up5k-sg48 : shapool-ice400-up5k-sg48.asc
 .phony: time
 
 # Make target binary and upload to device
+
 burn-ice40-hx8k-ct256 : shapool-ice40-hx8k-ct256.bin
 	iceprog $^
 
@@ -66,7 +72,7 @@ burn-ice40-hx8k-bg121 : shapool-ice40-hx8k-bg121.bin
 burn-ice40-up5k-sg48 : shapool-ice40-up5k-sg48.bin
 	iceprog $^
 
-# Validate verilog code...
+# Validate verilog code
 
 lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	verilator -Wall -cc top.v
