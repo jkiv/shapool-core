@@ -1,40 +1,30 @@
 # Pinout configuration for the Lattice Semiconductor iCE40HX8K Evaluation Board.
 # * http://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx
 
-# TODO update to new signal scheme
+# TODO sck1_in pin?
+# TODO cs0_n_in pin?
+# TODO double check pinout
 
-# per-device (internal)
-# J3 is used by the HX8K-CT256 EVB
-set_io hwclk J3
+# External oscillator (12 MHz)
+set_io clk_in J13
 
-# global MOSI
-set_io reset_in A16 # IOT_176
+# External asynchronous reset
+set_io reset_n_in A16
 
-# data_* share pins with SPI
-# global MOSI
-set_io data_clk R11 # IOB_107_SCK
-# global MOSI
-set_io data_in P11 # IOB_106_SDO
-# global MISO 
-set_io data_out_ts T11 # IOB_89
+# SPI0 (Shared SPI interface)
+set_io sck0_in R11
+set_io sdi0_in P11
+#set_io sdo0_out T11
+set_io cs0_n_in 
 
-# global
-set_io daisy_sel T10 # IOB_88
+# SPI1 (Daisy-chained SPI interface)
+set_io sck1_in 
+set_io sdi1_in D1
+set_io sdo1_out F16
+set_io cs1_n_in T10
 
-# device-to-device
-set_io daisy_in D1 # IOL_5B
-set_io daisy_out F16 # IOR_147
+# READY host interrupt
+set_io ready_n_ts_out T16
 
-# device-to-device
-set_io done_in E16 # IOR_151
-set_io done_out C1 # IOL_3A
-
-# shared
-set_io success_inout_ts T16 # IOB_100
-
-# per-device (optional)
-# B3 and C3 are used by the HX8K-CT256 EVB
-set_io status_led B3 # IOT_233
-set_io success_led C3 # IOT_227 
-
-# C_RESET_B N11
+# Status/Heartbeat LED
+set_io status_led_n_out B3

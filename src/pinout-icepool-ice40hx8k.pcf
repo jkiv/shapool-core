@@ -3,7 +3,7 @@
 
 # Pinout for the BG121 variant of the ICE40HX8K.
 
-# Hardware Oscillator (12 MHz)
+# External oscillator (12 MHz)
 set_io clk_in F11
 
 # External asynchronous reset

@@ -1,37 +1,31 @@
 # Pinout configuration for the Lattice Semiconductor iCE40 UltraPlus Breakout Board.
 # * http://www.latticesemi.com/products/developmentboardsandkits/ice40ultraplusbreakoutboard
 
-# TODO update to new signal scheme
+# TODO sck1_in pin?
+# TODO cs0_n_in pin?
+# TODO on-board oscillator rate?
+# TODO double check pinout
 
-# per-device
-set_io hwclk 35 # 35 = UP5K-B-EVB
-                # IOT_46b_G0
+# External oscillator (??? MHz)
+set_io clk_in 35
 
-# global MOSI
-set_io reset_in 4 # IOB_8a
+# External asynchronous reset
+set_io reset_n_in 4
 
-# data_* share pins with SPI
-# global MOSI
-set_io data_clk 15 # IOB_34a_SPI_SCK
-# global MOSI
-set_io data_in 17 # IOB_33b_SPI_SI
-# global MISO 
-set_io data_out_ts 18 # IOB_31b
+# SPI0 (Shared SPI interface)
+set_io sck0_in 15
+set_io sdi0_in 17
+#set_io sdo0_out 18
+set_io cs0_n_in 
 
-# global
-set_io daisy_sel 19 # IOB_29b
+# SPI1 (Daisy-chained SPI interface)
+set_io sck1_in 
+set_io sdi1_in 2
+set_io sdo1_out 28
+set_io cs1_n_in 19
 
-# device-to-device
-set_io daisy_in 2 # IOB_6a
-set_io daisy_out 28 # IOT_41a
+# READY host interrupt
+set_io ready_n_ts_out 21
 
-# device-to-device
-set_io done_in 26 # IOT_39a
-set_io done_out 3 # IOB_9b
-
-# device-to-device
-set_io success_inout_ts 21 # IOB_23b 
-
-# per-device (optional)
-set_io status_led 39 # RGB0
-set_io success_led 40 # RGB1
+# Status/Heartbeat LED
+set_io status_led_n_out 39
