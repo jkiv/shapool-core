@@ -73,9 +73,9 @@ Device-specific configuration data can be written to the device using SPI interf
 
 This typically only needs to be done when the device is initialized, e.g. after a power cycle or reprogramming.
 
-<img src="https://svg.wavedrom.com/{reg:[{name: 'nonce start MSB', bits: 8}], config:{bits: 8}}" />
+<img src="https://svg.wavedrom.com/{reg:[{name: 'nonce start (MSB)', bits: 8}], config:{bits: 8}}" />
 
-* nonce start MSB: the most-significant byte of the initial value for the nonce (0-255).
+* `nonce start (MSB)`: the most-significant byte of the initial value for the nonce (0-255).
 
 ## Job configuration
 
