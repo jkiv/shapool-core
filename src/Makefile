@@ -6,21 +6,25 @@ all: shapool-ice40hx8k-b-evn.bin shapool-ice40up5k-b-evn.bin shapool-icepool-ice
 
 # Validate verilog code
 
+.phony: lint
+
 lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	verilator -Wall -cc top.v
 
-.phony: lint
 
 # Test benches
 
 .phony: test
+
 test: lint
-	make -C test/ all
+	make -C tests/ all
 
 # Clean up
 
 .phony: clean
+
 clean :
+	make -C tests/ clean
 	rm -f shapool-*.out \
 		  shapool-*.json \
 		  shapool-*.asc \
