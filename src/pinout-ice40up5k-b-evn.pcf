@@ -1,32 +1,7 @@
-#
-#         indicators
-#          ^^^^^^^^
-#        /----------|
-# P2P in |          | P2P out
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#        +----------+
-#          ^v^v^v^v
-#         Shared bus
-#
-# P2P in:
-#   - done_out
-#   - daisy_in
-#
-# P2P out:
-#   - done_in
-#   - daisy_out
-#
-# Shared bus:
-#   - c_reset_b
-#   - reset
-#   - data_clk / SCK
-#   - data_in / SI
-#   - data_out_ts
-#   - daisy_sel
-#   - success_inout_ts
+# Pinout configuration for the Lattice Semiconductor iCE40 UltraPlus Breakout Board.
+# * http://www.latticesemi.com/products/developmentboardsandkits/ice40ultraplusbreakoutboard
+
+# TODO update to new signal scheme
 
 # per-device
 set_io hwclk 35 # 35 = UP5K-B-EVB

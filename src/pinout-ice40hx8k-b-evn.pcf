@@ -1,34 +1,7 @@
-# Debug indicators
+# Pinout configuration for the Lattice Semiconductor iCE40HX8K Evaluation Board.
+# * http://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx
 
-#
-#         indicators
-#          ^^^^^^^^
-#        /----------|
-# P2P in |          | P2P out
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#      > |          | >
-#        +----------+
-#          ^v^v^v^v
-#         Shared bus
-#
-# P2P in:
-#   - done_out
-#   - daisy_in
-#
-# P2P out:
-#   - done_in
-#   - daisy_out
-#
-# Shared bus:
-#   - c_reset_b
-#   - reset
-#   - data_clk / SCK
-#   - data_in / SI
-#   - data_out_ts
-#   - daisy_sel
-#   - success_inout_ts
+# TODO update to new signal scheme
 
 # per-device (internal)
 # J3 is used by the HX8K-CT256 EVB

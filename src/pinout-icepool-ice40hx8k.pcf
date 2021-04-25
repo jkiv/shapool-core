@@ -1,6 +1,7 @@
-# Pinout for the BG121 variant of the ICE40HX8K.
+# Pinout configuration for the `icepool` ice40hx8k-bg121 daughter board.
+# * https://github.com/jkiv/icepool-board
 
-# TODO update CT256 as well, for use with EVN-B
+# Pinout for the BG121 variant of the ICE40HX8K.
 
 # Hardware Oscillator (12 MHz)
 set_io clk_in F11
