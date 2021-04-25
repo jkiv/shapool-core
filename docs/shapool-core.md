@@ -73,9 +73,9 @@ Device-specific configuration data can be written to the device using SPI interf
 
 This typically only needs to be done when the device is initialized, e.g. after a power cycle or reprogramming.
 
-```
-TODO wavedrom register
-```
+<img src="https://svg.wavedrom.com/{reg:[{name: 'nonce start MSB', bits: 8}], config:{bits: 8}}" />
+
+* nonce start MSB: the most-significant byte of the initial value for the nonce (0-255).
 
 ## Job configuration
 
@@ -83,9 +83,13 @@ Job configuration data can be written to the device using SPI interface 0 while 
 
 This is done as often as required, e.g. after completed or expired jobs.
 
-```
-TODO wavedrom register
-```
+<img src="https://svg.wavedrom.com/{reg:[{name: 'difficulty offset', bits: 8},{name: 'message head', bits: 96},{name: 'SHA256 state', bits: 256}],config:{bits: 360, lanes: 12}}" />
+
+
+
+* `SHA256 state`: the internal state of the first SHA256 after the first block is hashed but before the second block is hashed.
+* `message head`: the start of the second block of the first hash.
+* `difficulty offset`: how many additional bits to check for zero in the result (0 - 15).
 
 ## Job results
 
@@ -97,6 +101,6 @@ Devices who did not finish their work will return all zeros as a result.
 
 Job result data is typically only read when `ready_n` is asserted by a device.
 
-```
-TODO wavedrom register
-```
+<img src="https://svg.wavedrom.com/{reg:  [{name: 'winning nonce',   bits: 32}],config:{bits: 32}}" />
+
+* `winning nonce`: the nonce that caused the successful hash, or zeros if no nonce found.
