@@ -6,7 +6,7 @@
 
 Each `shapool-core` device in a cluster is given the same job data by the host device. Each device works on the job until it either finishes or is interrupted by the host device.
 
-The work required for each job can be divided among the cluster by providing each `shapool-core` device with unique a device parameters such that no two devices will perform the same work.
+The work required for each job can be divided among the cluster by providing each `shapool-core` device with unique parameters such that no two devices will perform the same work.
 
 ## Signal Descriptions
 
