@@ -36,7 +36,7 @@ reset_n -->|               |--> status_led_n
 * `sdi1` - serial data input (SPI interface 1)
 * `sdo1` - serial data output (SPI interface 1)
 * `cs1_n` - active-low chip-select input (SPI interface 1)
-* `ready_n_ts` - active-low, open-drain "data ready" output
+* `ready_n` - active-low, open-drain "data ready" output
 * `status_led_n` - active-low indicator LED output
 
 SPI interface 0 is a one-to-many interface which allows the host device load the same job data to all `shapool-core` devices on the SPI bus. Note that this interface does not have a data output.
@@ -61,7 +61,7 @@ After the device is loaded with its job and configuration data, `reset_n` is de-
 
 The device will work on the provided job until it is done. If/when the device is done working on its job, the device will enter the `DONE` state.
 
-Each device who successfully completes its job will assert its `ready` signal. The `ready` signal tells the host device that work is completed and the result can be read on SPI interface 1. If the host asserts `cs1_n` while devices are in the `EXEC` state, this will force executing devices to enter the `DONE` state.
+Each device who successfully completes its job will assert its `ready_n` signal. The `ready_n` signal tells the host device that work is completed and the result can be read on SPI interface 1. If the host asserts `cs1_n` while devices are in the `EXEC` state, this will force executing devices to enter the `DONE` state.
 
 Once all devices are in the `DONE` state, SPI interface 1 is available. Devices who successfully finished their job will provide the result of their job. Otherwise, the device will provide a result of all zeros.
 
@@ -93,11 +93,11 @@ This is done as often as required, e.g. after completed or expired jobs.
 
 ## Job results
 
-Job result data can be read using SPI interface 1 when `reset_n` is de-asserted.
+Asserting `cs1_n` will cause all devices to stop executing and enter the `DONE` state.
 
-Asserting `cs1_n` will cause all devices to stop executing.
+Job result data can be read using SPI interface 1 when `reset_n` is de-asserted and once all devices are in their `DONE` state.
 
-Devices who did not finish their work will return all zeros as a result.
+Devices who did not finish their work will provide all zeros as a result.
 
 Job result data is typically only read when `ready_n` is asserted by a device.
 
