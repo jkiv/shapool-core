@@ -190,7 +190,7 @@ module shapool
     assign success = (|match_flags) & second_hash_complete & (round == 0);
 
     // Control `first_hash_complete` flag
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         if (!reset_n)
           first_hash_complete <= 0;
@@ -199,7 +199,7 @@ module shapool
       end
 
     // Control `second_hash_complete` flag
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         if (!reset_n)
           second_hash_complete <= 0;
@@ -208,7 +208,7 @@ module shapool
       end
 
     // Control `round`
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         if (!reset_n)
           round <= 0;
@@ -217,7 +217,7 @@ module shapool
       end
   
     // Control `nonce`
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         if (!reset_n)
           nonce <= nonce_start;

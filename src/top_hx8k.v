@@ -12,14 +12,23 @@ module top_hx8k
   sdo1_out,
   cs1_n_in,
   // Success flags
-  ready_n_ts_inout,
+  ready_n_ts_out,
   // Indicators
   status_led_n_out
 );
 
+    // Making pool smaller to test / fit on HX8K
+    `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1
+
+    parameter POOL_SIZE       = 1;
+    parameter POOL_SIZE_LOG2  = 0;
+    parameter BASE_DIFFICULTY = 64;
+
+/*  Original HX8K pool setup:
     parameter POOL_SIZE       = 2;
     parameter POOL_SIZE_LOG2  = 1;
     parameter BASE_DIFFICULTY = 64;
+*/
 
     // 12 MHz ~ 56.25 MHz
     parameter PLL_DIVR = 4'b0000;
@@ -41,7 +50,7 @@ module top_hx8k
     output wire sdo1_out;
     input wire cs1_n_in;
 
-    inout wire ready_n_ts_inout;
+    output wire ready_n_ts_out;
 
     output wire status_led_n_out;
 
@@ -66,7 +75,7 @@ module top_hx8k
       sdo1_out,
       cs1_n_in,
       // Success flags
-      ready_n_ts_inout,
+      ready_n_ts_out,
       // Indicators
       status_led_n_out
     );

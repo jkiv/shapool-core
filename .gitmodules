@@ -1,0 +1,3 @@
+[submodule "src/tests/btc_four_zeroes/icepool-driver"]
+	path = src/tests/btc_four_zeroes/icepool-driver
+	url = https://github.com/jkiv/icepool-driver

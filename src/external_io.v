@@ -39,7 +39,7 @@ module external_io(
 
     input wire sck1;
     input wire sdi1;
-    output reg sdo1;
+    output wire sdo1;
     input wire cs1_n; 
 
     // Stored data
@@ -65,36 +65,60 @@ module external_io(
     // Synchronize SPI signals to core `clk`
 
     reg [2:0] sck0_sync = 0;
+    reg [1:0] sdi0_sync = 0;
     wire sck0_sync_rising_edge;
     
     reg [2:0] sck1_sync = 0;
+    reg [1:0] sdi1_sync = 0;
     wire sck1_sync_rising_edge;
+    /* verilator lint_off UNUSED */
     wire sck1_sync_falling_edge;
+    /* verilator lint_on UNUSED */
 
     always @(posedge clk)
       begin
-        sck0_sync <= { sck0_sync[1:0], sck0 };
+        if (!reset_n)
+          begin
+            sck0_sync <= 0;
+            sdi0_sync <= 0;
+          end
+        else
+          begin
+            sck0_sync <= { sck0_sync[1:0], sck0 };
+            sdi0_sync <= { sdi0_sync[0], sdi0 };
+          end
       end
 
     assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
 
     always @(posedge clk)
       begin
-        sck1_sync <= { sck1_sync[1:0], sck1 };
+        if (!reset_n)
+          begin
+            sck1_sync <= 0;
+            sdi1_sync <= 0;
+          end
+        else
+          begin
+            sck1_sync <= { sck1_sync[1:0], sck1 };
+            sdi1_sync <= { sdi1_sync[0], sdi1 };
+          end
       end
 
     assign sck1_sync_rising_edge = !sck1_sync[2] & sck1_sync[1];
     assign sck1_sync_falling_edge = sck1_sync[2] & !sck1_sync[1];
 
-    // TODO sdi0, sdi1
+    // `sdo1` comes from `result_data` when STATE_DONE, otherwise `device_config`
+    assign sdo1 = (state == STATE_DONE) ?
+                    result_data[RESULT_DATA_WIDTH-1] :
+                    device_config[DEVICE_CONFIG_WIDTH-1];
 
     // Main state machine process
-    always @(posedge clk, negedge reset_n)
+    always @(posedge clk)
       begin
         if (!reset_n)
           begin
             state <= STATE_IDLE;
-            sdo1 <= 1'b0;
             ready <= 1'b0;
           end
         else
@@ -116,15 +140,11 @@ module external_io(
 
                       // Shift in `job_config` (msb-first) on rising edge
                       if (!cs0_n && sck0_sync_rising_edge)
-                        job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0 };
+                        job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0_sync[1] };
                       
                       // Shift in `device_config` (msb-first) on rising edge
                       if (!cs1_n && sck1_sync_rising_edge)
-                        device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1 };
-
-                      // Shift out `device_config` (msb-first) on falling edge
-                      if (!cs1_n && sck1_sync_falling_edge)
-                        sdo1 <= device_config[DEVICE_CONFIG_WIDTH-1];
+                        device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1_sync[1] };
 
                     end
                 end
@@ -149,28 +169,22 @@ module external_io(
                     //       In order to save resources, the host is responsible for
                     //       correcting this offset. 
                     result_data <= shapool_result;
-                    sdo1 <= shapool_result[RESULT_DATA_WIDTH-1];
                     /* verilator lint_on WIDTHCONCAT */
                   end
+
+                // Exit STATE_EXEC when `cs1_n` is asserted
                 // TODO ready_neighbour signal OR cs1_n, go to DONE?
                 else if (!cs1_n)
                   begin
                     state <= STATE_DONE;
-                    
                     result_data <= {(RESULT_DATA_WIDTH){1'b0}};
-                    sdo1 <= 1'b0;
                   end
 
               STATE_DONE:
                 begin
                   // Shift-in `result_data` (msb-first) on rising edge
                   if (!cs1_n && sck1_sync_rising_edge)
-                    result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1 };
-
-                  // Shift-out `result_data` (msb-first) on falling edge
-                  if (!cs1_n && sck1_sync_falling_edge)
-                    sdo1 <= result_data[RESULT_DATA_WIDTH-1];
-
+                    result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1_sync[1] };
                 end
 
               default:

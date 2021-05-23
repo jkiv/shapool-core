@@ -193,6 +193,6 @@ module top
 
     assign ready_n_ts_out = ready ? 1'b0 : 1'bz;
 
-    assign status_led_n_out = !((ready | !cs0_n_in | !cs1_n_in) & (sck1_in | sck0_in));
+    assign status_led_n_out = ~ready;
 
 endmodule

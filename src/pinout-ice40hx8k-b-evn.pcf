@@ -1,30 +1,26 @@
 # Pinout configuration for the Lattice Semiconductor iCE40HX8K Evaluation Board.
 # * http://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx
 
-# TODO sck1_in pin?
-# TODO cs0_n_in pin?
-# TODO double check pinout
-
 # External oscillator (12 MHz)
 set_io clk_in J13
 
 # External asynchronous reset
-set_io reset_n_in A16
+set_io reset_n_in B15
 
 # SPI0 (Shared SPI interface)
 set_io sck0_in R11
 set_io sdi0_in P11
 #set_io sdo0_out T11
-set_io cs0_n_in 
+set_io cs0_n_in R12
 
 # SPI1 (Daisy-chained SPI interface)
-set_io sck1_in 
-set_io sdi1_in D1
-set_io sdo1_out F16
-set_io cs1_n_in T10
+set_io sck1_in B10
+set_io sdi1_in B12 
+set_io sdo1_out B13
+set_io cs1_n_in A16
 
 # READY host interrupt
-set_io ready_n_ts_out T16
+set_io ready_n_ts_out B14 
 
 # Status/Heartbeat LED
-set_io status_led_n_out B3
+set_io status_led_n_out B5

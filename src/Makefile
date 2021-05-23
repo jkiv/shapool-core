@@ -2,7 +2,7 @@
 
 .phony: all
 
-all: shapool-ice40hx8k-b-evn.bin shapool-ice40up5k-b-evn.bin shapool-icepool-ice40hx8k.bin
+all: shapool-ice40hx8k-b-evn.bin shapool-icepool-ice40hx8k.bin # shapool-ice40up5k-b-evn.bin 
 
 # Validate verilog code
 
@@ -10,7 +10,6 @@ all: shapool-ice40hx8k-b-evn.bin shapool-ice40up5k-b-evn.bin shapool-icepool-ice
 
 lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	verilator -Wall -cc top.v
-
 
 # Test benches
 
@@ -32,19 +31,19 @@ clean :
 
 # Synthesize for device type
 
-shapool-ice40-hx8k.json : lint top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+shapool-ice40-hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	yosys -p 'synth_ice40 -top top_hx8k -json $@ -abc2 -retime' $^
 
-shapool-ice40-up5k.json : lint top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
-	yosys -p 'synth_ice40 -top top_up5k -blif $@ -abc2 -retime' $^
+shapool-ice40-up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+	yosys -p 'synth_ice40 -top top_up5k -json $@ -abc2 -retime' $^
 
 # Route for target board
 
 shapool-ice40hx8k-b-evn.asc : shapool-ice40-hx8k.json pinout-ice40hx8k-b-evn.pcf
 	nextpnr-ice40 --package ct256 --hx8k --json shapool-ice40-hx8k.json --pcf pinout-ice40hx8k-b-evn.pcf --asc $@
 
-shapool-ice40up5k-b-evn.asc : shapool-ice40-up5k.json pinout-ice40up5k-b-evn.pcf
-	nextpnr-ice40 --package sg48 --up5k --json shapool-ice40-up5k.json --pcf pinout-ice40up5k-b-evn.pcf --asc $@
+#shapool-ice40up5k-b-evn.asc : shapool-ice40-up5k.json pinout-ice40up5k-b-evn.pcf
+#	nextpnr-ice40 --package sg48 --up5k --json shapool-ice40-up5k.json --pcf pinout-ice40up5k-b-evn.pcf --asc $@
 
 shapool-icepool-ice40hx8k.asc : shapool-ice40-hx8k.json pinout-icepool-ice40hx8k.pcf
 	nextpnr-ice40 --package bg121 --hx8k --json shapool-ice40-hx8k.json --pcf pinout-icepool-ice40hx8k.pcf --asc $@
@@ -79,12 +78,12 @@ time-icepool-ice40hx8k : shapool-icepool-ice40hx8k.asc
 
 .phony: burn-ice40hx8k-b-evn
 burn-ice40hx8k-b-evn : shapool-ice40-hx8k-ct256.bin
-	iceprog $^
+	iceprog -v -S $^
 
-.phony: burn-ice40up5k-b-evn
-burn-ice40up5k-b-evn : shapool-ice40up5k-b-evn.bin
-	iceprog $^
+#.phony: burn-ice40up5k-b-evn
+#burn-ice40up5k-b-evn : shapool-ice40up5k-b-evn.bin
+#	iceprog -v -S $^
 
 .phony: burn-icepool-ice40hx8k
 burn-icepool-ice40hx8k : shapool-icepool-ice40hx8k.bin
-	iceprog $^
+	iceprog -v -S $^

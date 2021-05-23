@@ -1,12 +1,12 @@
 # Pinout configuration for the Lattice Semiconductor iCE40 UltraPlus Breakout Board.
 # * http://www.latticesemi.com/products/developmentboardsandkits/ice40ultraplusbreakoutboard
 
-# TODO sck1_in pin?
-# TODO cs0_n_in pin?
-# TODO on-board oscillator rate?
-# TODO double check pinout
+# TODO Remove this target from project.
+#      - FT2232H port B is unused on evaluation board, so no IOs
+#
+# FUTURE target icebreaker?
 
-# External oscillator (??? MHz)
+# External oscillator (12 MHz)
 set_io clk_in 35
 
 # External asynchronous reset
@@ -16,16 +16,16 @@ set_io reset_n_in 4
 set_io sck0_in 15
 set_io sdi0_in 17
 #set_io sdo0_out 18
-set_io cs0_n_in 
+set_io cs0_n_in 16
 
 # SPI1 (Daisy-chained SPI interface)
 set_io sck1_in 
-set_io sdi1_in 2
-set_io sdo1_out 28
-set_io cs1_n_in 19
+set_io sdi1_in
+set_io sdo1_out
+set_io cs1_n_in
 
 # READY host interrupt
-set_io ready_n_ts_out 21
+set_io ready_n_ts_out
 
 # Status/Heartbeat LED
 set_io status_led_n_out 39
