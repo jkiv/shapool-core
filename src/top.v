@@ -97,16 +97,24 @@ module top
     );
 `endif
 
-    // Global reset
+    // Global reset(s)
     wire g_reset_n;
+    wire g_core_reset_n;
 
 `ifdef VERILATOR
     assign g_reset_n = reset_n_in;
 `else
-    // Use ICE40 GBUF fabric
+    // Buffered external `reset_n`
     SB_GB reset_gbuf (
       .USER_SIGNAL_TO_GLOBAL_BUFFER(reset_n_in),
       .GLOBAL_BUFFER_OUTPUT(g_reset_n)
+    );
+
+    // Hold the core in a reset state when either the
+    // external `reset_n` is low or `ready` is high.
+    SB_GB core_reset_gbuf (
+      .USER_SIGNAL_TO_GLOBAL_BUFFER(reset_n_in & ~ready),
+      .GLOBAL_BUFFER_OUTPUT(g_core_reset_n)
     );
 `endif
 
@@ -180,7 +188,7 @@ module top
     pool (
       // Control
       g_clk,
-      g_reset_n,
+      g_core_reset_n,
       // Parameters
       sha_state,
       message_head,

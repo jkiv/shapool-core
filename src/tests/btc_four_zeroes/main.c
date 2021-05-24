@@ -24,12 +24,17 @@ int main()
     // Set up icepool context
     IcepoolContext* ctx = icepool_new();
 
+    if (!ctx) {
+        fprintf(stderr, "Could not initialize IcepoolContext. Quitting...\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Assert reset_n
     icepool_assert_reset(ctx);
 
     // Set up device data
     
-    uint8_t device_config[DEVICE_COUNT*DEVICE_CONFIG_LEN] = {
+    uint8_t device_configs[DEVICE_COUNT*DEVICE_CONFIG_LEN] = {
         // Device 3
         0xB0,
         // Device 2
@@ -58,9 +63,7 @@ int main()
     // Send device data
     icepool_spi_assert_daisy(ctx);
 
-    for (size_t n = 0; n < DEVICE_COUNT; n++) {
-        icepool_spi_write_daisy(ctx, &device_config[0], DEVICE_COUNT*DEVICE_CONFIG_LEN);
-    }
+    icepool_spi_write_daisy(ctx, device_configs, DEVICE_COUNT*DEVICE_CONFIG_LEN);
 
     icepool_spi_deassert_daisy(ctx);
 
@@ -75,7 +78,9 @@ int main()
     icepool_deassert_reset(ctx);
 
     // Wait for READY
-    while(!icepool_poll_ready(ctx));
+    printf("Waiting for READY...\n");
+    while(!icepool_poll_ready(ctx)) { printf("."); fflush(stdout); };
+    printf("READY!\n");
 
     // Get result
 

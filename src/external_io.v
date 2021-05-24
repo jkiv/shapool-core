@@ -75,36 +75,26 @@ module external_io(
     wire sck1_sync_falling_edge;
     /* verilator lint_on UNUSED */
 
+    // Synchronize SPI signals to reference clk
     always @(posedge clk)
       begin
         if (!reset_n)
           begin
             sck0_sync <= 0;
             sdi0_sync <= 0;
-          end
-        else
-          begin
-            sck0_sync <= { sck0_sync[1:0], sck0 };
-            sdi0_sync <= { sdi0_sync[0], sdi0 };
-          end
-      end
-
-    assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
-
-    always @(posedge clk)
-      begin
-        if (!reset_n)
-          begin
             sck1_sync <= 0;
             sdi1_sync <= 0;
           end
         else
           begin
+            sck0_sync <= { sck0_sync[1:0], sck0 };
+            sdi0_sync <= { sdi0_sync[0], sdi0 };
             sck1_sync <= { sck1_sync[1:0], sck1 };
             sdi1_sync <= { sdi1_sync[0], sdi1 };
           end
       end
 
+    assign sck0_sync_rising_edge = !sck0_sync[2] & sck0_sync[1];
     assign sck1_sync_rising_edge = !sck1_sync[2] & sck1_sync[1];
     assign sck1_sync_falling_edge = sck1_sync[2] & !sck1_sync[1];
 
@@ -128,8 +118,6 @@ module external_io(
 
               STATE_IDLE:
                 begin
-                  ready <= 1'b0;
-
                   // Go to STATE_EXEC when `reset_n` is deasserted
                   if (reset_n)
                       state <= STATE_EXEC;
@@ -176,6 +164,7 @@ module external_io(
                 // TODO ready_neighbour signal OR cs1_n, go to DONE?
                 else if (!cs1_n)
                   begin
+                    ready <= 1'b1; // Forces core to halt
                     state <= STATE_DONE;
                     result_data <= {(RESULT_DATA_WIDTH){1'b0}};
                   end
