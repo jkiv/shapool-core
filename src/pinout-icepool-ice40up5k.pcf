@@ -1,10 +1,7 @@
-# Pinout configuration for the Lattice Semiconductor iCE40 UltraPlus Breakout Board.
-# * http://www.latticesemi.com/products/developmentboardsandkits/ice40ultraplusbreakoutboard
+# Pinout configuration for the `icepool` ice40up5k-sg48 daughter board.
+# * https://github.com/jkiv/icepool-board
 
-# TODO Remove this target from project.
-#      - FT2232H port B is unused on evaluation board, so no IOs
-#
-# FUTURE target icebreaker?
+# FUTURE
 
 # External oscillator (12 MHz)
 set_io clk_in 35
