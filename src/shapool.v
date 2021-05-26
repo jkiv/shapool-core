@@ -221,7 +221,7 @@ module shapool
       begin
         if (!reset_n)
           nonce <= nonce_start;
-        else if (round == 0)
+        else if (round == 63)
           nonce <= nonce + 1;
       end
   

@@ -35,6 +35,24 @@ module top_hx8k
     parameter PLL_DIVF = 7'b1001010;
     parameter PLL_DIVQ = 3'b100;
 
+    // Multiply input clock signal using SB_PLL40_CORE
+    wire g_clk;
+
+    SB_PLL40_CORE #(
+        .FEEDBACK_PATH("SIMPLE"),
+        .DIVR(PLL_DIVR),
+        .DIVF(PLL_DIVF),
+        .DIVQ(PLL_DIVQ),
+        .FILTER_RANGE(3'b001)
+    ) uut (
+        .LOCK(pll_locked),
+        .RESETB(1'b1),
+        .BYPASS(1'b0),
+        .REFERENCECLK(clk_in),
+        //.PLLOUTCORE(g_clk)
+        .PLLOUTGLOBAL(g_clk)
+    );
+
     // Inputs and Outputs
 
     input wire clk_in;
@@ -57,13 +75,10 @@ module top_hx8k
     top #(
       .POOL_SIZE(POOL_SIZE),
       .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-      .BASE_DIFFICULTY(BASE_DIFFICULTY),
-      .PLL_DIVR(PLL_DIVR),
-      .PLL_DIVF(PLL_DIVF),
-      .PLL_DIVQ(PLL_DIVQ)
+      .BASE_DIFFICULTY(BASE_DIFFICULTY)
     )
     u (
-      clk_in,
+      g_clk,
       reset_n_in,
       // Global data
       sck0_in,

@@ -44,13 +44,6 @@ module top
     */
     parameter BASE_DIFFICULTY = 64;
 
-
-    // PLL parameters: 12MHz to 48MHz
-    // FUTURE trim with parameters
-    parameter PLL_DIVR = 4'b0000;
-    parameter PLL_DIVF = 7'b0111111;
-    parameter PLL_DIVQ = 3'b100;
-
     // Inputs and Outputs
 
     input wire clk_in;
@@ -70,39 +63,13 @@ module top
 
     output wire status_led_n_out;
 
-    // Global clock signal
-    wire g_clk;
-
-`ifdef VERILATOR
-    assign g_clk = clk_in;
-`else
-    /* verilator lint_off UNUSED */
-    wire pll_locked;
-    /* verilator lint_on UNUSED */
-
-    // Multiply input clock signal using SB_PLL40_CORE
-    SB_PLL40_CORE #(
-        .FEEDBACK_PATH("SIMPLE"),
-        .DIVR(PLL_DIVR),
-        .DIVF(PLL_DIVF),
-        .DIVQ(PLL_DIVQ),
-        .FILTER_RANGE(3'b001)
-    ) uut (
-        .LOCK(pll_locked),
-        .RESETB(1'b1),
-        .BYPASS(1'b0),
-        .REFERENCECLK(clk_in),
-        //.PLLOUTCORE(g_clk)
-        .PLLOUTGLOBAL(g_clk)
-    );
-`endif
-
     // Global reset(s)
     wire g_reset_n;
     wire g_core_reset_n;
 
 `ifdef VERILATOR
     assign g_reset_n = reset_n_in;
+    assign g_core_reset_n = reset_n_in & ~ready;
 `else
     // Buffered external `reset_n`
     SB_GB reset_gbuf (
@@ -147,7 +114,7 @@ module top
       .JOB_CONFIG_WIDTH(JOB_CONFIG_WIDTH),
       .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH)
     ) ext_io (
-      g_clk,
+      clk_in,
       g_reset_n,
       // SPI(0)
       sck0_in,
@@ -174,7 +141,7 @@ module top
     // TODO make difficulty_bitmask 15 bits?
     wire [15:0] difficulty_bitmask;
     difficulty_map dm (
-      g_clk,
+      clk_in,
       1'b1, // en
       difficulty[3:0],
       difficulty_bitmask
@@ -187,7 +154,7 @@ module top
       .BASE_DIFFICULTY(BASE_DIFFICULTY))
     pool (
       // Control
-      g_clk,
+      clk_in,
       g_core_reset_n,
       // Parameters
       sha_state,
