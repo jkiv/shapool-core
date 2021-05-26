@@ -24,9 +24,9 @@ module external_io(
     ready
 );
 
-    parameter JOB_CONFIG_WIDTH = 1;
-    parameter DEVICE_CONFIG_WIDTH = 1;
-    parameter RESULT_DATA_WIDTH = 1;
+    parameter DEVICE_CONFIG_WIDTH = 8;         // nonce_start
+    parameter JOB_CONFIG_WIDTH = 256 + 96 + 8; // sha_state + message_head + difficulty
+    parameter RESULT_DATA_WIDTH = 32;          // nonce;
 
     // Inputs and outputs
 
@@ -45,6 +45,7 @@ module external_io(
     // Stored data
     output reg [DEVICE_CONFIG_WIDTH-1 : 0] device_config = 0;
     output reg [JOB_CONFIG_WIDTH-1 : 0] job_config = 0;
+
     reg [RESULT_DATA_WIDTH-1 : 0] result_data = 0;
 
     // From shapool
@@ -166,7 +167,7 @@ module external_io(
                   begin
                     ready <= 1'b1; // Forces core to halt
                     state <= STATE_DONE;
-                    result_data <= {(RESULT_DATA_WIDTH){1'b0}};
+                    result_data <= 0;
                   end
 
               STATE_DONE:
