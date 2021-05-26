@@ -10,7 +10,6 @@ produce a hobbyist/DIY low power FPGA SHA256d miner.
 This project aims to support multiple targets including
 
 * [ICE40HX8K-B-EVN](http://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx)
-* [ICE40UP5K-B-EVN](http://www.latticesemi.com/products/developmentboardsandkits/ice40ultraplusbreakoutboard)
 * [jkiv/icepool-board](https://github.com/jkiv/icepool-board)
 * ... and others.
 

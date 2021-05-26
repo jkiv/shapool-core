@@ -2,7 +2,7 @@
 
 .phony: all
 
-all: shapool-ice40hx8k-b-evn.bin shapool-icepool-ice40hx8k.bin # shapool-ice40up5k-b-evn.bin 
+all: shapool-ice40hx8k-b-evn.bin shapool-icepool-ice40hx8k.bin # shapool-icepool-ice40up5k.bin 
 
 # Validate verilog code
 
@@ -42,7 +42,7 @@ shapool-ice40-up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_ex
 shapool-ice40hx8k-b-evn.asc : shapool-ice40-hx8k.json pinout-ice40hx8k-b-evn.pcf
 	nextpnr-ice40 --package ct256 --hx8k --json shapool-ice40-hx8k.json --pcf pinout-ice40hx8k-b-evn.pcf --asc $@
 
-#shapool-ice40up5k-b-evn.asc : shapool-ice40-up5k.json pinout-ice40up5k-b-evn.pcf
+#shapool-icepool-ice40up5k.asc : shapool-ice40-up5k.json pinout-ice40up5k-b-evn.pcf
 #	nextpnr-ice40 --package sg48 --up5k --json shapool-ice40-up5k.json --pcf pinout-ice40up5k-b-evn.pcf --asc $@
 
 shapool-icepool-ice40hx8k.asc : shapool-ice40-hx8k.json pinout-icepool-ice40hx8k.pcf
@@ -53,8 +53,8 @@ shapool-icepool-ice40hx8k.asc : shapool-ice40-hx8k.json pinout-icepool-ice40hx8k
 shapool-ice40hx8k-b-evn.bin : shapool-ice40hx8k-b-evn.asc
 	icepack $^ $@
 
-shapool-ice40up5k-b-evn.bin : shapool-ice40up5k-b-evn.asc
-	icepack $^ $@
+#shapool-icepool-ice40up5k.bin : shapool-icepool-ice40up5k.asc
+#	icepack $^ $@
 
 shapool-icepool-ice40hx8k.bin : shapool-icepool-ice40hx8k.asc
 	icepack $^ $@
@@ -65,9 +65,9 @@ shapool-icepool-ice40hx8k.bin : shapool-icepool-ice40hx8k.asc
 time-ice40hx8k-b-evn : shapool-ice40hx8k-v-evn.asc
 	icetime -t -m -d hx8k -P ct256 -p pinout-ice40hx8k-b-evn.pcf -o - $^
 
-.phony: time-ice40up5k-b-evn
-time-ice40up5k-b-evn : shapool-ice40up5k-b-evn.asc
-	icetime -t -m -d up5k -P sg48 -p pinout-ice40up5k-b-evn.pcf -o - $^
+#.phony: time-ice40up5k-b-evn
+#time-ice40up5k-b-evn : shapool-icepool-ice40up5k.asc
+#	icetime -t -m -d up5k -P sg48 -p pinout-ice40up5k-b-evn.pcf -o - $^
 
 .phony: time-icepool-ice40hx8k
 time-icepool-ice40hx8k : shapool-icepool-ice40hx8k.asc
@@ -81,7 +81,7 @@ burn-ice40hx8k-b-evn : shapool-ice40-hx8k-ct256.bin
 	iceprog -v -S $^
 
 #.phony: burn-ice40up5k-b-evn
-#burn-ice40up5k-b-evn : shapool-ice40up5k-b-evn.bin
+#burn-ice40up5k-b-evn : shapool-icepool-ice40up5k.bin
 #	iceprog -v -S $^
 
 .phony: burn-icepool-ice40hx8k
