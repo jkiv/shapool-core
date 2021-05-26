@@ -165,31 +165,32 @@ module shapool_test();
 
         end
 
-        if (success == 1 && nonce - 1 == nonce_expected && uut.tracks[0].H_u1 == H_expected)
+        if (success == 1 && nonce - 2 == nonce_expected && uut.tracks[0].H_u1 == H_expected)
           begin
             // TODO Success
             $display("\033\133\063\062\155[PASS]\033\133\060\155 `shapool`, single track, BTC four-zeroes");
-            // TODO input
+            // TODO inputs
             $display("");
-            $display("       success      = %0d", success);
-            $display("       nonce        = %0d", nonce);
-            $display("       H (actual)   = %h", uut.tracks[0].H_u1[255:128]);
-            $display("                      %h", uut.tracks[0].H_u1[127:  0]);
-            $display("       H (expected) = %h", H_expected[255:128]);
-            $display("                      %h", H_expected[127:  0]);
+            $display("       success          = %0d", success);
+            $display("       nonce            = %0d", nonce);
+            $display("       nonce (adjusted) = %0d", nonce-2);
+            $display("       H (actual)       = %h", uut.tracks[0].H_u1[255:128]);
+            $display("                          %h", uut.tracks[0].H_u1[127:  0]);
+            $display("       H (expected)     = %h", H_expected[255:128]);
+            $display("                          %h", H_expected[127:  0]);
           end
         else
           begin
             $display("\033\133\063\061\155[FAIL]\033\133\060\155 `shapool`, single track, BTC four-zeroes");
             // TODO inputs
             $display("");
-            $display("       success      = %0d", success);
-            $display("       nonce        = %0d", nonce);
-            $display("       H (actual)   = %h", uut.tracks[0].H_u1[255:128]);
-            $display("                      %h", uut.tracks[0].H_u1[127:  0]);
-            $display("       H (expected) = %h", H_expected[255:128]);
-            $display("                      %h", H_expected[127:  0]);
-
+            $display("       success          = %0d", success);
+            $display("       nonce            = %0d", nonce);
+            $display("       nonce (adjusted) = %0d", nonce-2);
+            $display("       H (actual)       = %h", uut.tracks[0].H_u1[255:128]);
+            $display("                          %h", uut.tracks[0].H_u1[127:  0]);
+            $display("       H (expected)     = %h", H_expected[255:128]);
+            $display("                          %h", H_expected[127:  0]);
             $error("Test case failed.");
           end
 
