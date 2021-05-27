@@ -11,19 +11,10 @@ all: shapool-ice40hx8k-b-evn.bin shapool-icepool-ice40hx8k.bin # shapool-icepool
 lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
 	verilator -Wall -cc top.v
 
-# Test benches
-
-.phony: test
-
-test: test 
-	make -C tests/ all
-
 # Clean up
 
 .phony: clean
-
 clean :
-	make -C tests/ clean
 	rm -f shapool-*.out \
 		  shapool-*.json \
 		  shapool-*.asc \
