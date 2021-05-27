@@ -14,9 +14,9 @@ module top
   sdi1_in,
   sdo1_out,
   cs1_n_in,
-  // Success flags
-  ready_n_ts_out,
-  // Indicators
+  // READY flags
+  ready_n_od_out,
+  // Indicator LED
   status_led_n_out
 );
 
@@ -59,7 +59,7 @@ module top
     output wire sdo1_out;
     input wire cs1_n_in;
 
-    output wire ready_n_ts_out;
+    output wire ready_n_od_out;
 
     output wire status_led_n_out;
 
@@ -102,7 +102,7 @@ module top
     // Whether any unit on this device was successful
     wire success;
 
-    // Whether or not to drive `ready_n_ts_out` low (1) or keep high-impedance (0).
+    // Whether or not to drive `ready_n_od_out` low (1) or keep high-impedance (0).
     wire ready;
 
     // Nonce result
@@ -166,7 +166,7 @@ module top
       nonce
     );
 
-    assign ready_n_ts_out = ready ? 1'b0 : 1'bz;
+    assign ready_n_od_out = ready ? 1'b0 : 1'bz;
 
     assign status_led_n_out = ~ready;
 
