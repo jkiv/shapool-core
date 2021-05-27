@@ -1,3 +1,6 @@
 [submodule "src/tests/btc_four_zeroes/icepool-driver"]
 	path = src/tests/vendor/icepool-driver
 	url = https://github.com/jkiv/icepool-driver
+[submodule "src/tests/vendor/munit"]
+	path = src/tests/vendor/munit
+	url = https://github.com/nemequ/munit
