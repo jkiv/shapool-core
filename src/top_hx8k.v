@@ -11,9 +11,9 @@ module top_hx8k
   sdi1_in,
   sdo1_out,
   cs1_n_in,
-  // Success flags
-  ready_n_ts_out,
-  // Indicators
+  // READY flags
+  ready_n_od_out,
+  // Indicator LED
   status_led_n_out
 );
 
@@ -23,12 +23,6 @@ module top_hx8k
     parameter POOL_SIZE       = 1;
     parameter POOL_SIZE_LOG2  = 0;
     parameter BASE_DIFFICULTY = 64;
-
-/*  Original HX8K pool setup:
-    parameter POOL_SIZE       = 2;
-    parameter POOL_SIZE_LOG2  = 1;
-    parameter BASE_DIFFICULTY = 64;
-*/
 
     // 12 MHz ~ 56.25 MHz
     parameter PLL_DIVR = 4'b0000;
@@ -68,7 +62,7 @@ module top_hx8k
     output wire sdo1_out;
     input wire cs1_n_in;
 
-    output wire ready_n_ts_out;
+    output wire ready_n_od_out;
 
     output wire status_led_n_out;
 
@@ -90,7 +84,7 @@ module top_hx8k
       sdo1_out,
       cs1_n_in,
       // Success flags
-      ready_n_ts_out,
+      ready_n_od_out,
       // Indicators
       status_led_n_out
     );

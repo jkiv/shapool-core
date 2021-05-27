@@ -19,8 +19,8 @@ set_io sdi1_in B12
 set_io sdo1_out B13
 set_io cs1_n_in A16
 
-# READY host interrupt
-set_io ready_n_ts_out B14 
+# READY host open-drain interrupt
+set_io ready_n_od_out B14 
 
 # Status/Heartbeat LED
 set_io status_led_n_out B5

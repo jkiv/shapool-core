@@ -12,7 +12,7 @@ module top_up5k
   sdo1_out,
   cs1_n_in,
   // Success flags
-  ready_n_ts_out,
+  ready_n_od_out,
   // Indicators
   status_led_n_out
 );
@@ -43,7 +43,7 @@ module top_up5k
     output wire sdo1_out;
     input wire cs1_n_in;
 
-    output wire ready_n_ts_out;
+    output wire ready_n_od_out;
 
     output wire status_led_n_out;
 
@@ -68,7 +68,7 @@ module top_up5k
       sdo1_out,
       cs1_n_in,
       // Success flags
-      ready_n_ts_out,
+      ready_n_od_out,
       // Indicators
       status_led_n_out
     );

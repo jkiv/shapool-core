@@ -21,8 +21,8 @@ set_io sdi1_in F3
 set_io sdo1_out K1
 set_io cs1_n_in H1
 
-# READY host interrupt
-set_io ready_n_ts_out B1
+# READY host open-drain interrupt
+set_io ready_n_od_out B1
 
 # Status/Heartbeat LED
 set_io status_led_n_out A11
