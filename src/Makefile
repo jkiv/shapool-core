@@ -15,7 +15,7 @@ lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_m
 
 .phony: test
 
-test: lint
+test: test 
 	make -C tests/ all
 
 # Clean up
@@ -28,6 +28,7 @@ clean :
 		  shapool-*.json \
 		  shapool-*.asc \
 		  shapool-*.bin
+	rm -rf ./obj_dir
 
 # Synthesize for device type
 
@@ -76,14 +77,14 @@ time-icepool-ice40hx8k : shapool-icepool-ice40hx8k.asc
 
 # Make target binary and upload to device
 
-.phony: burn-ice40hx8k-b-evn
-burn-ice40hx8k-b-evn : shapool-ice40-hx8k-ct256.bin
+.phony: flash-ice40hx8k-b-evn
+flash-ice40hx8k-b-evn : shapool-ice40-hx8k-ct256.bin
 	iceprog -v -S $^
 
-#.phony: burn-ice40up5k-b-evn
-#burn-ice40up5k-b-evn : shapool-icepool-ice40up5k.bin
+#.phony: flash-ice40up5k-b-evn
+#flash-ice40up5k-b-evn : shapool-icepool-ice40up5k.bin
 #	iceprog -v -S $^
 
-.phony: burn-icepool-ice40hx8k
-burn-icepool-ice40hx8k : shapool-icepool-ice40hx8k.bin
+.phony: flash-icepool-ice40hx8k
+flash-icepool-ice40hx8k : shapool-icepool-ice40hx8k.bin
 	iceprog -v -S $^

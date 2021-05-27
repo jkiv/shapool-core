@@ -1,15 +1,24 @@
-# Run all tests
+.phony : test_benches 
+test_benches: sha_round_usage_tb sha_unit_usage_tb shapool_usage_tb external_io_usage_tb
 
-.phony: all
-all: sha_round_usage_tb sha_unit_usage_tb shapool_usage_tb external_io_usage_tb
+.phony : hardware_tests 
+hardware_tests : btc_four_zeroes 
 
-# Clean up after test benches
+.phony : all
+all : test_benches hardware_tests	
 
 .phony : clean
-clean :
+clean : clean_test_benches clean_hardware_tests
+
+.phony : clean_test_benches
+clean_test_benches :
 	rm -f *.out *.vcd
 
-# Test benches
+.phony : clean_hardware_tests
+clean_hardware_tests :
+	make -C ./btc_four_zeroes clean
+
+# Testbench 
 
 sha_round_usage_tb.out : sha_round_usage_tb.v ../sha_round.v
 	iverilog -o $@  $^
@@ -40,3 +49,9 @@ external_io_usage_tb.out : external_io_usage_tb.v ../external_io.v
 
 external_io_usage_tb : external_io_usage_tb.out
 	vvp $^
+
+# Tests requiring hardware
+
+.phony : btc_four_zeroes
+btc_four_zeroes :
+	make -C ./btc_four_zeroes run

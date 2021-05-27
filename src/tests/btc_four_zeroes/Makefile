@@ -28,5 +28,4 @@ flash :
 .phony : clean
 clean :
 	make -C ./rtl clean
-	make -C $(ICEPOOL_PATH) clean
 	rm -f ./btc_four_zeroes
