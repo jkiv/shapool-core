@@ -1,7 +1,16 @@
+# Gateware build artifacts
 *.out
 *.blif
 *.json
 *.asc
 *.bin
 
-external/
+# iverilog artifacts
+obj_dir/
+
+# Test bench artifacts
+*.vcd
+
+# Hardware test artifacts
+*.o
+*.a
