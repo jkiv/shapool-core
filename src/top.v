@@ -65,11 +65,13 @@ module top
 
     // Global reset(s)
     wire g_reset_n;
+
+    wire core_reset_n;
     wire g_core_reset_n;
 
 `ifdef VERILATOR
     assign g_reset_n = reset_n_in;
-    assign g_core_reset_n = reset_n_in & ~ready;
+    assign g_core_reset_n = core_reset_n;
 `else
     // Buffered external `reset_n`
     SB_GB reset_gbuf (
@@ -80,7 +82,7 @@ module top
     // Hold the core in a reset state when either the
     // external `reset_n` is low or `ready` is high.
     SB_GB core_reset_gbuf (
-      .USER_SIGNAL_TO_GLOBAL_BUFFER(reset_n_in & ~ready),
+      .USER_SIGNAL_TO_GLOBAL_BUFFER(core_reset_n),
       .GLOBAL_BUFFER_OUTPUT(g_core_reset_n)
     );
 `endif
@@ -110,6 +112,8 @@ module top
 
     // External IO interface
     external_io #(
+      .POOL_SIZE(POOL_SIZE),
+      .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
       .DEVICE_CONFIG_WIDTH(DEVICE_CONFIG_WIDTH),
       .JOB_CONFIG_WIDTH(JOB_CONFIG_WIDTH),
       .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH)
@@ -128,7 +132,10 @@ module top
       // Stored data
       { nonce_start },
       { sha_state, message_head, difficulty },
+      // Control signals
+      core_reset_n,
       // From shapool
+      match_flags,
       nonce,
       success,
       // READY signal
@@ -163,7 +170,8 @@ module top
       .nonce_start_MSB(nonce_start),
       // Results
       .success_out(success),
-      .nonce_out(nonce)
+      .nonce_out(nonce),
+      .match_flags(match_flags)
     );
 
     assign ready_n_od_out = ready ? 1'b0 : 1'bz;

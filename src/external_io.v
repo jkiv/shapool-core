@@ -17,16 +17,23 @@ module external_io(
     // Stored data
     device_config,
     job_config,
+    // Control signals
+    core_reset_n,
     // From shapool
+    shapool_match_flags,
     shapool_result,
     shapool_success,
     // READY signal
     ready
 );
 
+    parameter POOL_SIZE = 2;
+    parameter POOL_SIZE_LOG2 = 1;
+
     parameter DEVICE_CONFIG_WIDTH = 8;            // nonce_start
     parameter JOB_CONFIG_WIDTH    = 256 + 96 + 8; // sha_state + message_head + difficulty
-    parameter RESULT_DATA_WIDTH   = 32;           // nonce
+    parameter RESULT_DATA_WIDTH   = 32 + 8;       // nonce + match flags
+    // FUTURE scale match_flags?
 
     // Inputs and outputs
 
@@ -44,11 +51,19 @@ module external_io(
 
     // Stored data
     output reg [DEVICE_CONFIG_WIDTH-1 : 0] device_config = 0;
-    output reg [   JOB_CONFIG_WIDTH-1 : 0] job_config    = 0;
+    output reg [   JOB_CONFIG_WIDTH-1 : 0] job_config    = {
+        128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5,
+        128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df,
+        96'hdc141787_358b0553_535f0119,
+        8'd3
+    };
+
+    output reg core_reset_n = 1;
 
     reg [RESULT_DATA_WIDTH-1 : 0] result_data = 0;
 
     // From shapool
+    input wire [POOL_SIZE-1:0] shapool_match_flags;
     input wire [RESULT_DATA_WIDTH-1 : 0] shapool_result;
     input wire shapool_success;
 
@@ -98,10 +113,14 @@ module external_io(
             begin
               // Deassert READY signal
               ready <= 0;
+              core_reset_n <= 0;
 
               // Go to STATE_EXEC when `reset_n` is deasserted
               if (reset_n)
+                begin
                   state <= STATE_EXEC;
+                  core_reset_n <= 1;
+                end
 
               // Allow `job_config` and `device_config` to be shifted in while `reset_n` is asserted.
               else
@@ -122,7 +141,8 @@ module external_io(
              if (shapool_success)
               begin
                 state <= STATE_DONE;
-                ready <= 1; // Notify host, halt core
+                ready <= 1;        // Notify host
+                core_reset_n <= 0; // Halt core
 
                 /* verilator lint_off WIDTHCONCAT */
 
@@ -137,7 +157,7 @@ module external_io(
                 //       second.
                 //       In order to save resources, the host is responsible for
                 //       correcting this offset. 
-                result_data <= shapool_result;
+                result_data <= { shapool_result, {(8-POOL_SIZE){1'b0}}, shapool_match_flags};
                 /* verilator lint_on WIDTHCONCAT */
               end
 
@@ -145,7 +165,8 @@ module external_io(
             // FUTURE neighbour READY 
             else if (!cs1_n)
               begin
-                ready <= 1; // Halt core 
+                ready <= 1;
+                core_reset_n <= 0;   // Halt core
                 state <= STATE_DONE;
                 result_data <= 0;
               end

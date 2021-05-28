@@ -10,7 +10,8 @@ module shapool
   nonce_start_MSB,
   // Result
   success_out,
-  nonce_out
+  nonce_out,
+  match_flags
 );
     parameter POOL_SIZE = 2;
     parameter POOL_SIZE_LOG2 = 1;
@@ -36,7 +37,7 @@ module shapool
     output wire [31:0] nonce_out;
 
     // Per-unit match flags
-    wire [POOL_SIZE-1:0] match_flags;
+    output wire [POOL_SIZE-1:0] match_flags;
 
     /* State
      */
@@ -75,9 +76,9 @@ module shapool
         128'h00000000_00000000_00000000_00000100
     };
 
-    /** Generate "tracks".
+    /** Generate "pipelines".
 
-      Each track:
+      Each pipeline:
       * consists of two chained `sha_unit` hashing units.
       * hardcodes unique nonce most-significant bits.
       * checks for leading zeros and generates its own `match_flag`.
@@ -86,9 +87,9 @@ module shapool
     genvar n;
     generate
       for (n = 0; n < POOL_SIZE; n = n + 1)
-        begin : tracks 
+        begin : pipelines
 
-        // Hash input
+        // Hash inputs
         wire [511:0] M0;
         wire [511:0] M1;
 
@@ -96,7 +97,7 @@ module shapool
         wire [255:0] H_u0;
         wire [255:0] H_u1;
 
-        // Saved bits from H_u0
+        // Saved bits from H_u0 for M1
         reg [223:0] M1_H1;
 
         // Byte-swapped H_u1 for testing
@@ -116,7 +117,7 @@ module shapool
         assign nonce_upper = n;
 `endif
 
-        // Construct `nonce`: 
+        // Construct `nonce` output: 
         //
         //  31             31-POOL_SIZE_LOG2                      0
         // +-------------+-----------------------------------------+
@@ -216,9 +217,7 @@ module shapool
           H_u1_swap[256-BASE_DIFFICULTY-1:256-BASE_DIFFICULTY-16] & difficulty_bm
         };
 
-        // Test leading zeros only
-        // -- higher difficulty
-        // -- simpler implementation
+        // Test bits for zero
         assign match_flags[n] = ~(|H_test_bits);
 
       end
@@ -232,6 +231,7 @@ module shapool
     assign nonce_out = nonce_lower;
 `else
     // FUTURE select winning `nonce_upper`
+    // FUTURE save "match flags"
     assign nonce_out = {{(POOL_SIZE_LOG2){1'b0}}, nonce_lower};
 `endif
 
