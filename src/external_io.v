@@ -26,7 +26,7 @@ module external_io(
 
     parameter DEVICE_CONFIG_WIDTH = 8;            // nonce_start
     parameter JOB_CONFIG_WIDTH    = 256 + 96 + 8; // sha_state + message_head + difficulty
-    parameter RESULT_DATA_WIDTH   = 32;           // nonce;
+    parameter RESULT_DATA_WIDTH   = 32;           // nonce
 
     // Inputs and outputs
 
@@ -56,13 +56,13 @@ module external_io(
     output reg ready;
 
     // State machine definition
-    localparam STATE_IDLE = 2'b001,
-               STATE_EXEC = 2'b010,
-               STATE_DONE = 2'b100;
+    localparam STATE_IDLE = 2'b00,
+               STATE_EXEC = 2'b01,
+               STATE_DONE = 2'b10;
 
     reg [1:0] state = STATE_IDLE;
 
-    // Synchronize SPI signals to core `clk`
+    // Synchronize SPI signals to reference `clk`
 
     reg [2:0] sck0_sync = 0;
     reg [1:0] sdi0_sync = 0;
@@ -72,7 +72,6 @@ module external_io(
     reg [1:0] sdi1_sync = 0;
     wire sck1_sync_rising_edge;
 
-    // Synchronize SPI signals to reference clk
     always @(posedge clk)
       begin
         sck0_sync <= { sck0_sync[1], sck0_sync[0], sck0 };
@@ -86,9 +85,9 @@ module external_io(
     assign sck1_sync_rising_edge  = ~sck1_sync[2] & sck1_sync[1];
 
     // `sdo1` comes from `result_data` when STATE_DONE, otherwise `device_config`
-    assign sdo1 = (state == STATE_DONE) ?
-                    result_data[RESULT_DATA_WIDTH-1] :
-                    device_config[DEVICE_CONFIG_WIDTH-1];
+    assign sdo1 = (state == STATE_DONE)
+                    ? result_data[RESULT_DATA_WIDTH-1]
+                    : device_config[DEVICE_CONFIG_WIDTH-1];
 
     // Main state machine process
     always @(posedge clk)
@@ -97,6 +96,7 @@ module external_io(
 
           STATE_IDLE:
             begin
+              // Deassert READY signal
               ready <= 0;
 
               // Go to STATE_EXEC when `reset_n` is deasserted
@@ -140,20 +140,23 @@ module external_io(
                 result_data <= shapool_result;
                 /* verilator lint_on WIDTHCONCAT */
               end
-            // Exit STATE_EXEC when `cs1_n` is asserted
-            // TODO ready_neighbour signal OR cs1_n, go to DONE?
+
+            // Go to STATE_DONE when `cs1_n` is asserted
+            // FUTURE neighbour READY 
             else if (!cs1_n)
               begin
                 ready <= 1; // Halt core 
                 state <= STATE_DONE;
                 result_data <= 0;
               end
+
+            // Go to STATE_IDLE when `reset_n` is asserted
             else if (!reset_n)
                 state <= STATE_IDLE;
 
           STATE_DONE:
             begin
-              if (!reset_in)
+              if (!reset_n)
                 state <= STATE_IDLE;
 
               // Shift-in `result_data` (msb-first) on rising edge

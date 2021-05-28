@@ -20,9 +20,9 @@ module top
   status_led_n_out
 );
 
-    localparam DEVICE_CONFIG_WIDTH = 8;         // nonce_start
-    localparam JOB_CONFIG_WIDTH = 256 + 96 + 8; // sha_state + message_head + difficulty
-    localparam RESULT_DATA_WIDTH = 32;          // nonce
+    localparam DEVICE_CONFIG_WIDTH = 8;            // nonce_start
+    localparam JOB_CONFIG_WIDTH    = 256 + 96 + 8; // sha_state + message_head + difficulty
+    localparam RESULT_DATA_WIDTH   = 32;           // nonce
 
     localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
 
@@ -106,7 +106,7 @@ module top
     wire ready;
 
     // Nonce result
-    wire [NONCE_WIDTH-1:0] nonce;
+    wire [31:0] nonce;
 
     // External IO interface
     external_io #(
@@ -129,7 +129,7 @@ module top
       { nonce_start },
       { sha_state, message_head, difficulty },
       // From shapool
-      { {(POOL_SIZE_LOG2){1'b0}}, nonce }, // FIXME host needs to make POOL_SIZE_LOG2 checks
+      nonce,
       success,
       // READY signal
       ready
@@ -141,10 +141,10 @@ module top
     // TODO make difficulty_bitmask 15 bits?
     wire [15:0] difficulty_bitmask;
     difficulty_map dm (
-      clk_in,
-      1'b1, // en
-      difficulty[3:0],
-      difficulty_bitmask
+      .clk(clk_in),
+      .en(1'b1),
+      .addr(difficulty[3:0]),
+      .difficulty(difficulty_bitmask)
     );
 
     // Hasher pool
@@ -154,20 +154,20 @@ module top
       .BASE_DIFFICULTY(BASE_DIFFICULTY))
     pool (
       // Control
-      clk_in,
-      g_core_reset_n,
+      .clk(clk_in),
+      .reset_n(g_core_reset_n),
       // Parameters
-      sha_state,
-      message_head,
-      difficulty_bitmask,
-      nonce_start,
+      .sha_state(sha_state),
+      .message_head(message_head),
+      .difficulty_bm(difficulty_bitmask),
+      .nonce_start_MSB(nonce_start),
       // Results
-      success,
-      nonce
+      .success_out(success),
+      .nonce_out(nonce)
     );
 
     assign ready_n_od_out = ready ? 1'b0 : 1'bz;
 
-    assign status_led_n_out = ~ready;
+    assign status_led_n_out = reset_n_in & ~ready;
 
 endmodule
