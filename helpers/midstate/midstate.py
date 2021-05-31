@@ -44,7 +44,6 @@ def stream_blocks(stream, block_size=64):
 
         yield block_data
 
-
 def get_midstate(stream, last_block=None):
 
     state = ShaState()
@@ -53,13 +52,12 @@ def get_midstate(stream, last_block=None):
         state.update(block_data)
 
         if n == last_block:
-            # Return hash function state
-            return (n, state,)
+            return state
 
     if last_block:
-        raise ValueError(f'Stream closed before reaching block {last_block}.')
+        raise RuntimeError(f'Stream closed before reaching block {last_block}. Last block was {n}.')
     
-    return (n, state,)
+    return state
 
 if __name__ == '__main__':
 
@@ -80,10 +78,10 @@ if __name__ == '__main__':
         raise ValueError("Block number must be >= 0.")
 
     if args.input_file is None:
-        n, state = get_midstate(sys.stdin.buffer, args.block)
+        state = get_midstate(sys.stdin.buffer, args.block)
     else:
         with open(args.input_file, 'rb') as s:
-            n, state = get_midstate(s, args.block)
+            state = get_midstate(s, args.block)
 
     if args.output_file is None:
         s = sys.stdout
