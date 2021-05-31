@@ -1,10 +1,11 @@
 import argparse
 import binascii
 import ctypes
+import fileinput
 from os import path
 import sys
 
-_midstate = ctypes.CDLL(path.abspath(path.join(path.dirname(__file__), "midstate_sha256.so")))
+_midstate = ctypes.CDLL(path.abspath(path.join(path.dirname(__file__), "midstate.so")))
 
 def _ffi(ffi, function_name, return_type, arg_types):
     fn = ffi.__getattr__(function_name)

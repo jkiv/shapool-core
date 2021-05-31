@@ -1,11 +1,14 @@
 .phony : all
-all : midstate.so
+all : midstate_sha256.so
 
-midstate.so : midstate.c
+midstate_sha256.so : midstate_sha256.c
 	gcc --std=c99 -Wall -fPIC -shared -o $@ $^
 
-midstate.o : midstate.c
+.phony : test
+test : midstate_sha256.so
+	pytest
 
 .phony : clean
 clean :
-	rm -f midstate.so
+	rm -f midstate_sha256.so
+	rm -rf __pycache__/
