@@ -54,7 +54,15 @@ static uint32_t w_expand(uint32_t w2, uint32_t w7, uint32_t w15, uint32_t w16) {
   return ssig1(w2) + w7 + ssig0(w15) + w16;
 }
 
-static void sha256_update(uint32_t* H, const uint8_t* m) {
+static uint32_t byte_swap_32(uint32_t x)
+{
+  return ((x & 0x000000ff) << 24) |
+         ((x & 0x0000ff00) <<  8) |
+         ((x & 0x00ff0000) >>  8) |
+         ((x & 0xff000000) >> 24);
+}
+
+static void sha256_update(uint32_t* H, const uint32_t* m) {
   uint32_t w[64] = {0}; // message schedule
   
   uint32_t a,b,c,d,e,f,g,h = 0; // working variables
@@ -76,12 +84,7 @@ static void sha256_update(uint32_t* H, const uint8_t* m) {
     if (t < 16) {
       // 32-bit input is considered big-endian by spec
       // whereas x86 is little endian. Swap byte order.
-      size_t t4 = 4*t;
-
-      w[t] = ((uint32_t)m[t4])<<24;
-      w[t] |= ((uint32_t)m[t4+1])<<16;
-      w[t] |= ((uint32_t)m[t4+2])<<8;
-      w[t] |= ((uint32_t)m[t4+3]);
+      w[t] = byte_swap_32(m[t]);
     }
     else {
       w[t] = w_expand(w[t-2], w[t-7], w[t-15], w[t-16]);
@@ -125,6 +128,6 @@ void init_state(uint32_t* state) {
   }
 }
 
-void update_state(uint32_t* state, const uint8_t* block) {
+void update_state(uint32_t* state, const uint32_t* block) {
   sha256_update(state, block);
 }
