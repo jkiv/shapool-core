@@ -54,7 +54,7 @@ static uint32_t w_expand(uint32_t w2, uint32_t w7, uint32_t w15, uint32_t w16) {
   return ssig1(w2) + w7 + ssig0(w15) + w16;
 }
 
-static void sha256(const uint8_t* m, uint32_t* H) {
+static void sha256_update(uint32_t* H, const uint8_t* m) {
   uint32_t w[64] = {0}; // message schedule
   
   uint32_t a,b,c,d,e,f,g,h = 0; // working variables
@@ -119,22 +119,12 @@ static void sha256(const uint8_t* m, uint32_t* H) {
   H[7] += h;
 }
 
-uint32_t* new_state() {
-  uint32_t* state = malloc(sizeof(uint32_t)*8);
-
-  if (state) {
-    memcpy(state, SHA256_H0, sizeof(uint32_t)*8);
-  }
-
-  return state;
-}
-
-void free_state(uint8_t* state) {
-  if (state) {
-    free(state);
+void init_state(uint32_t* state) {
+  for (size_t i = 0; i < 8; i++) {
+    state[i] = SHA256_H0[i];
   }
 }
 
 void update_state(uint32_t* state, const uint8_t* block) {
-  sha256(block, state);
+  sha256_update(state, block);
 }
