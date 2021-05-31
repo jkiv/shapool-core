@@ -12,3 +12,4 @@ test : midstate_sha256.so
 clean :
 	rm -f midstate_sha256.so
 	rm -rf __pycache__/
+	rm -rf .pytest_cache/

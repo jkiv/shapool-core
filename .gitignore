@@ -14,3 +14,11 @@ obj_dir/
 # Hardware test artifacts
 *.o
 *.a
+
+# Python
+dist/
+build/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
