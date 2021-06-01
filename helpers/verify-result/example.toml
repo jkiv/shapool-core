@@ -1,0 +1,6 @@
+# Example TOML
+version = 2
+previous_block = "000000000000000117c80378b8da0e33559b5997f2ad55e2f7d18ec1975b9717"
+merkel_root = "871714dcbae6c8193a2bb9b2a69fe1c0440399f38d94b3a0f1b447275a29978a"
+time = 0x53058b35
+bits = 0x19015f53
