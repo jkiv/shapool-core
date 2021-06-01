@@ -39,6 +39,7 @@ module shapool_test();
 
   wire success;
   wire [31:0] nonce;
+  wire [7:0] match_flags;
 
   // TODO expected values
   localparam nonce_expected = 39;
@@ -95,7 +96,8 @@ module shapool_test();
     nonce_start_MSB,
     // Result
     success,
-    nonce
+    nonce,
+    match_flags
   );
 
   always
@@ -146,49 +148,49 @@ module shapool_test();
                 $display("  round: %d", uut.round);
                 $display("  nonce: %d", nonce);
                 $display("  u0:");
-                $display("    M: %h", uut.tracks[0].u0.M[511:384]);
-                $display("       %h", uut.tracks[0].u0.M[383:256]);
-                $display("       %h", uut.tracks[0].u0.M[255:128]);
-                $display("       %h", uut.tracks[0].u0.M[127:  0]);
-                $display("    H: %h", uut.tracks[0].H_u0[255:128]);
-                $display("       %h", uut.tracks[0].H_u0[127:  0]);
+                $display("    M: %h", uut.pipelines[0].u0.M[511:384]);
+                $display("       %h", uut.pipelines[0].u0.M[383:256]);
+                $display("       %h", uut.pipelines[0].u0.M[255:128]);
+                $display("       %h", uut.pipelines[0].u0.M[127:  0]);
+                $display("    H: %h", uut.pipelines[0].H_u0[255:128]);
+                $display("       %h", uut.pipelines[0].H_u0[127:  0]);
                 $display("  u1:");
-                $display("    M: %h", uut.tracks[0].u1.M[511:384]);
-                $display("       %h", uut.tracks[0].u1.M[383:256]);
-                $display("       %h", uut.tracks[0].u1.M[255:128]);
-                $display("       %h", uut.tracks[0].u1.M[127:  0]);
-                $display("    H: %h", uut.tracks[0].H_u1[255:128]);
-                $display("       %h", uut.tracks[0].H_u1[127:  0]);
+                $display("    M: %h", uut.pipelines[0].u1.M[511:384]);
+                $display("       %h", uut.pipelines[0].u1.M[383:256]);
+                $display("       %h", uut.pipelines[0].u1.M[255:128]);
+                $display("       %h", uut.pipelines[0].u1.M[127:  0]);
+                $display("    H: %h", uut.pipelines[0].H_u1[255:128]);
+                $display("       %h", uut.pipelines[0].H_u1[127:  0]);
                 $display("");
               `endif
             end
 
         end
 
-        if (success == 1 && nonce - 2 == nonce_expected && uut.tracks[0].H_u1 == H_expected)
+        if (success == 1 && nonce - 2 == nonce_expected && uut.pipelines[0].H_u1 == H_expected)
           begin
             // TODO Success
-            $display("\033\133\063\062\155[PASS]\033\133\060\155 `shapool`, single track, BTC four-zeroes");
+            $display("\033\133\063\062\155[PASS]\033\133\060\155 `shapool`: single track, BTC four-zeroes");
             // TODO inputs
             $display("");
             $display("       success          = %0d", success);
             $display("       nonce            = %0d", nonce);
             $display("       nonce (adjusted) = %0d", nonce-2);
-            $display("       H (actual)       = %h", uut.tracks[0].H_u1[255:128]);
-            $display("                          %h", uut.tracks[0].H_u1[127:  0]);
+            $display("       H (actual)       = %h", uut.pipelines[0].H_u1[255:128]);
+            $display("                          %h", uut.pipelines[0].H_u1[127:  0]);
             $display("       H (expected)     = %h", H_expected[255:128]);
             $display("                          %h", H_expected[127:  0]);
           end
         else
           begin
-            $display("\033\133\063\061\155[FAIL]\033\133\060\155 `shapool`, single track, BTC four-zeroes");
+            $display("\033\133\063\061\155[FAIL]\033\133\060\155 `shapool`: single track, BTC four-zeroes");
             // TODO inputs
             $display("");
             $display("       success          = %0d", success);
             $display("       nonce            = %0d", nonce);
             $display("       nonce (adjusted) = %0d", nonce-2);
-            $display("       H (actual)       = %h", uut.tracks[0].H_u1[255:128]);
-            $display("                          %h", uut.tracks[0].H_u1[127:  0]);
+            $display("       H (actual)       = %h", uut.pipelines[0].H_u1[255:128]);
+            $display("                          %h", uut.pipelines[0].H_u1[127:  0]);
             $display("       H (expected)     = %h", H_expected[255:128]);
             $display("                          %h", H_expected[127:  0]);
             $error("Test case failed.");
