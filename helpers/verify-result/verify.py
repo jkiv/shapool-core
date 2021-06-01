@@ -71,10 +71,10 @@ def compute_nonce(header: bytes, leading_zeroes: int = 64, nonce_gen: Iterator =
 def verify_nonce(header: bytes, nonce: int, leading_zeroes: int = 64) -> bytes:
     assert(len(header) == 76)
 
-    header = header + struct.pack("<L")
+    header = header + struct.pack("<L", nonce)
     hash = compute_hash(header)
 
-    return test_hash_leading_zeroes(leading_zeroes)
+    return test_hash_leading_zeroes(hash[::-1], leading_zeroes)
 
 # TODO
 # Compute nonce given data and difficulty
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-n", "--nonce", type=int, required=False, help="nonce to verify")
-    group.add_argument("-r", "--range", type=str, required=False, help="range for nonce check -- csv or [start:end)")
+    group.add_argument("-r", "--range", type=str, required=False, help="range for nonce check (comma-separated values or start:end)")
 
     args = parser.parse_args()
 
@@ -127,8 +127,12 @@ if __name__ == "__main__":
         # Verify nonce
         valid = verify_nonce(header, args.nonce, args.difficulty)
 
-        assert(valid)
-        print(valid)
+        if not valid:
+            print(f"Invalid nonce: {args.nonce}", file=sys.stderr)
+            sys.exit(1)
+        else:
+            sys.exit(0)
+
     else:
 
         # Interpret nonce range
