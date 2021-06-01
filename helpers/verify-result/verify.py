@@ -103,14 +103,14 @@ if __name__ == "__main__":
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-n", "--nonce", type=int, required=False, help="nonce to verify")
-    group.add_argument("-r", "--range", type=str, required=False, help="range for nonce check (comma-separated values or start:end)")
+    group.add_argument("-r", "--range", type=str, required=False, help="set of nonce values to check (comma-separated values or start:end)")
 
     args = parser.parse_args()
 
     # Load case
     case = None
 
-    if args.case:
+    if args.case and args.case != '-':
         case = toml.load(args.case)
     else:
         case = toml.load(sys.stdin)
