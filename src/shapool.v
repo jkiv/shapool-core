@@ -6,22 +6,17 @@ module shapool
   // Job Params
   sha_state,
   message_head,
-  difficulty_bm,
   nonce_start_MSB,
   // Result
-  success_out,
-  nonce_out,
+  success,
+  nonce,
   match_flags
 );
     parameter POOL_SIZE = 2;
     parameter POOL_SIZE_LOG2 = 1;
     parameter BASE_DIFFICULTY = 64;
-    
-    // How big of a counter for `nonce` do we need?
-    localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
 
-    /* Inputs/Outputs
-     */
+    localparam NONCE_LOWER_WIDTH = 32 - POOL_SIZE_LOG2;
 
     input wire clk;
     input wire reset_n;
@@ -29,20 +24,15 @@ module shapool
     // Job parameters
     input wire [255:0] sha_state;
     input wire [95:0] message_head;
-    input wire [15:0] difficulty_bm;
     input wire [7:0] nonce_start_MSB;
 
     // Job results
-    output wire success_out;
-    output wire [31:0] nonce_out;
+    output wire success;
+    output wire [31:0] nonce;
+    output wire [7:0] match_flags;
 
-    // Per-unit match flags
-    output wire [POOL_SIZE-1:0] match_flags;
-
-    /* State
-     */
-
-    reg [NONCE_WIDTH-1:0] nonce_lower = 0;
+    // Shared state
+    reg [NONCE_LOWER_WIDTH-1:0] nonce_lower = 0;
     reg [5:0] round = 0;
 
     // Supress some logic during first and second hash
@@ -51,11 +41,12 @@ module shapool
     reg first_hash_complete = 0;
     reg second_hash_complete = 0;
 
-    localparam[255:0] SHA256_H0 = 
-    { 32'h6a09e667, 32'hbb67ae85,
+    localparam[255:0] SHA256_H0 = {
+      32'h6a09e667, 32'hbb67ae85,
       32'h3c6ef372, 32'ha54ff53a,
       32'h510e527f, 32'h9b05688c,
-      32'h1f83d9ab, 32'h5be0cd19 };
+      32'h1f83d9ab, 32'h5be0cd19
+    };
 
     wire [31:0] Kt;
 
@@ -106,7 +97,7 @@ module shapool
         /* verilator lint_on UNUSED */
 
         // Bits to test for `success`
-        wire [BASE_DIFFICULTY+16-1:0] H_test_bits;
+        wire [BASE_DIFFICULTY-1:0] H_test_bits;
 
 `ifndef SHAPOOL_NO_NONCE_OFFSET
         // Hard-coded unit offset
@@ -117,7 +108,7 @@ module shapool
         assign nonce_upper = n;
 `endif
 
-        // Construct `nonce` output: 
+        // Construct `M_nonce`: 
         //
         //  31             31-POOL_SIZE_LOG2                      0
         // +-------------+-----------------------------------------+
@@ -127,18 +118,18 @@ module shapool
         // FUTURE Nonce space segmenting issues arise when not all devices
         // have the same `POOL_SIZE`.
 
-        wire [31:0] nonce;
+        wire [31:0] M_nonce;
 
 `ifdef SHAPOOL_NO_NONCE_OFFSET
-        assign nonce = {
+        assign M_nonce = {
           nonce_lower[31:24] ^ nonce_start_MSB,
           nonce_lower[23:0]
         };
 `else
-        assign nonce = {
+        assign M_nonce = {
           nonce_upper,
-          nonce_lower[NONCE_WIDTH-1:NONCE_WIDTH-8] ^ nonce_start_MSB,
-          nonce_lower[NONCE_WIDTH-9:0]
+          nonce_lower[NONCE_LOWER_WIDTH-1:NONCE_LOWER_WIDTH-8] ^ nonce_start_MSB,
+          nonce_lower[NONCE_LOWER_WIDTH-9:0]
         };
 `endif
 
@@ -147,10 +138,10 @@ module shapool
           message_head,
           // Nonce (swapped endianness)
           {
-            nonce[ 7: 0],
-            nonce[15: 8],
-            nonce[23:16],
-            nonce[31:24]
+            M_nonce[ 7: 0],
+            M_nonce[15: 8],
+            M_nonce[23:16],
+            M_nonce[31:24]
           },
           // End of M0
           M0_tail
@@ -210,12 +201,7 @@ module shapool
         };
 
         // Bits of result we care about
-        assign H_test_bits = {
-          // bits from BASE_DIFFICULTY:
-          H_u1_swap[255:256-BASE_DIFFICULTY],
-          // bits from `difficulty` parameter:
-          H_u1_swap[256-BASE_DIFFICULTY-1:256-BASE_DIFFICULTY-16] & difficulty_bm
-        };
+        assign H_test_bits = H_u1_swap[255:256-BASE_DIFFICULTY];
 
         // Test bits for zero
         assign match_flags[n] = ~(|H_test_bits);
@@ -223,16 +209,17 @@ module shapool
       end
     endgenerate
 
-    // Generate `success` flag from the set of `match_flag`s
-    assign success_out = (|match_flags) & second_hash_complete & (round == 0);
+    // Zero out top of `match_flags`
+    assign match_flags[7:POOL_SIZE] = 0;
+
+    // Generate `success` flag
+    assign success = (|match_flags[POOL_SIZE-1:0]) & second_hash_complete & (round == 0);
 
     // Output current nonce
 `ifdef SHAPOOL_NO_NONCE_OFFSET
-    assign nonce_out = nonce_lower;
+    assign nonce = nonce_lower;
 `else
-    // FUTURE select winning `nonce_upper`
-    // FUTURE save "match flags"
-    assign nonce_out = {{(POOL_SIZE_LOG2){1'b0}}, nonce_lower};
+    assign nonce = {{(POOL_SIZE_LOG2){1'b0}}, nonce_lower};
 `endif
 
     // Control `first_hash_complete` flag

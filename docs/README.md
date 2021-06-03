@@ -47,23 +47,24 @@ Both SPI interfaces are SPI mode 0, 0 and most-significant-bit-first.
 
 ## Behavioural Description
 
-`shapool-core` has three main states:
+`shapool-core` has four main states:
 
-1. `IDLE` - Reset / Idle
-2. `EXEC` - Execute job
-3. `DONE` - Done executing / Read result
+1. `RESET` - Reset
+2. `LOAD` - Load device and job data
+3. `EXEC` - Execute job
+4. `DONE` - Done executing, read result
 
-The device enters the `IDLE` state whenever the device's `reset_n` signal is asserted. This state resets execution state but retains job and configuration data.
+The device enters the `RESET` state whenever the device's `reset_n` signal is asserted. This state resets execution state but retains job and configuration data.
 
-While `reset_n` is asserted, both SPI interfaces 0 and 1 are active. Job data and device configuration data can be written to SPI interfaces 0 and 1 respectively while `reset_n` is asserted.
+Immediately after resetting, the device enters the `LOAD` state, while `reset_n` is still asserted. During the `LOAD` state, both SPI interfaces 0 and 1 are active. Job data and device configuration data can be written to SPI interfaces 0 and 1 respectively.
 
-After the device is loaded with its job and configuration data, `reset_n` is de-asserted and the device immediately enters the `EXEC` state.
+After the device is loaded with its job and configuration data, `reset_n` can be de-asserted to put the device into the `EXEC` state.
 
-The device will work on the provided job until it is done. If/when the device is done working on its job, the device will enter the `DONE` state.
+The device will work on the provided job until it is done. If and when the device is done its job, the device will enter the `DONE` state.
 
-Each device who successfully completes its job will assert its `ready_n` signal. The `ready_n` signal tells the host device that work is completed and the result can be read on SPI interface 1. If the host asserts `cs1_n` while devices are in the `EXEC` state, this will force executing devices to enter the `DONE` state.
+Each device who successfully completes its job will assert its `ready_n` signal. The `ready_n` signal tells the host device that work is completed and the result can be read on SPI interface 1. If the host asserts `cs1_n` while devices are in the `EXEC` state, this will force all devices to enter the `DONE` state.
 
-Once all devices are in the `DONE` state, SPI interface 1 is available. Devices who successfully finished their job will provide the result of their job. Otherwise, the device will provide a result of all zeros.
+Once all devices are in the `DONE` state, SPI interface 1 is available to read from. Devices who successfully finished their job will provide the result of their job. Otherwise, the device will provide a result of all zeros.
 
 After reading the results from the devices, the host can repeat the process by asserting `reset_n` and loading a new job on SPI interface 0.
 
@@ -83,24 +84,18 @@ Job configuration data can be written to the device using SPI interface 0 while 
 
 This is done as often as required, e.g. after completed or expired jobs.
 
-<img src="https://svg.wavedrom.com/{reg:[{name: 'difficulty offset', bits: 4},{name: '(unused)', bits: 4, type: 1},{name: 'message head', bits: 96},{name: 'SHA256 state', bits: 256}],config:{bits: 360, lanes: 12}}" />
-
-
+<img src="https://svg.wavedrom.com/{reg:[{name: 'message head', bits: 96},{name: 'SHA256 state', bits: 256}],config:{bits: 352, lanes: 11}}" />
 
 * `SHA256 state`: the internal state of the first SHA256 after the first block is hashed but before the second block is hashed.
 * `message head`: the start of the second block of the first hash.
-* `difficulty offset`: how many additional bits to check for zero in the result (0 - 15).
 
 ## Job results
 
-Asserting `cs1_n` will cause all devices to stop executing and enter the `DONE` state.
-
-Job result data can be read using SPI interface 1 when `reset_n` is de-asserted and once all devices are in their `DONE` state.
+Job result data can be read using SPI interface 1 when `cs1_n` is asserted, `reset_n` is de-asserted, and all devices have entered the `DONE` state.
 
 Devices who did not finish their work will provide all zeros as a result.
 
-Job result data is typically only read when `ready_n` is asserted by a device.
+<img src="https://svg.wavedrom.com/{reg: [{name: 'winning nonce', bits: 32},{name: 'match flags', bits: 8}],config:{bits: 40, lanes: 1}}" />
 
-<img src="https://svg.wavedrom.com/{reg:  [{name: 'winning nonce',   bits: 32}],config:{bits: 32}}" />
-
-* `winning nonce`: the nonce that caused the successful hash, or zeros if no nonce found.
+* `match flags`: bit positions having `1` denote pipelines (cores) that generated a winning hash.
+* `winning nonce`: the nonce that caused the winning hash, or zeros if not found.

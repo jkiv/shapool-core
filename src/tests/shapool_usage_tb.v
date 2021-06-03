@@ -15,15 +15,13 @@ module shapool_test();
 
   localparam POOL_SIZE = 1;
   localparam POOL_SIZE_LOG2 = 0;
-  localparam BASE_DIFFICULTY = 1;
+  localparam BASE_DIFFICULTY = 4;
 
   localparam [359:0] job_parameters = {
     128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5, // SHA starting state
     128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df, // ...
-    96'hdc141787_358b0553_535f0119,           // Start of message block
-    8'd3                                      // Difficulty offset (BASE_DIFFICULTY + 3 = 4 bits)
+    96'hdc141787_358b0553_535f0119            // Start of message block
   };
-  // NOTE: using TARGET_OFFSET to provide zero check
 
   localparam [7:0] device_parameters = {
     8'h00 // nonce start (MSB) 
@@ -34,14 +32,12 @@ module shapool_test();
 
   reg [255:0] sha_state;
   reg [95:0] message_head;
-  reg [7:0] difficulty;
   reg [7:0] nonce_start_MSB;
 
   wire success;
   wire [31:0] nonce;
   wire [7:0] match_flags;
 
-  // TODO expected values
   localparam nonce_expected = 39;
   localparam [255:0] H_expected = { 256'hc7f3244e501edf780c420f63a4266d30ffe1bdb53f4fde3ccd688604f15ffd03 };
 
@@ -72,15 +68,6 @@ module shapool_test();
   990	0001e3a4583f4c6d81251e8d9901dbe0df74d7144300d7c03cab15eca04bd4bb
   */
 
-  wire [15:0] difficulty_bm;
-
-  difficulty_map dm (
-    clk,
-    !reset_n,
-    difficulty[3:0],
-    difficulty_bm
-  );
-
   shapool
   #(.POOL_SIZE(POOL_SIZE),
     .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
@@ -92,13 +79,15 @@ module shapool_test();
     // Job Params
     sha_state,
     message_head,
-    difficulty_bm,
     nonce_start_MSB,
     // Result
     success,
     nonce,
     match_flags
   );
+
+  localparam spi_bit_half_period = 6;
+  localparam reset_hold_period = 2;
 
   always
     begin
@@ -119,22 +108,23 @@ module shapool_test();
       reset_n <= 1;
 
       // Job parameters
-      sha_state    <= job_parameters[360-1:360-256];
-      message_head <= job_parameters[360-256-1:360-256-96];
-      difficulty   <= job_parameters[360-256-96-1:0];
+      sha_state    <= job_parameters[351:96];
+      message_head <= job_parameters[ 95: 0];
 
       // Device configuration
       nonce_start_MSB <= device_parameters[7:0];
 
+      #10;
+
       // Reset module
-      #2 reset_n <= 0; // one clock cycle
+      reset_n <= 0;
+      #reset_hold_period;
 
       // (Normally job_parameters, device_parameters shifted in here.)
 
-      #2 reset_n <= 1; // one clock cycle
+      reset_n <= 1;
+      #2; // one clock cycle (INIT -> EXEC)
       
-      #2; // one clock cycle, RESET -> EXEC
-
       for (n = 0; n < 50 && !success; n = n)
         begin
 
@@ -169,22 +159,11 @@ module shapool_test();
 
         if (success == 1 && nonce - 2 == nonce_expected && uut.pipelines[0].H_u1 == H_expected)
           begin
-            // TODO Success
             $display("\033\133\063\062\155[PASS]\033\133\060\155 `shapool`: single track, BTC four-zeroes");
-            // TODO inputs
-            $display("");
-            $display("       success          = %0d", success);
-            $display("       nonce            = %0d", nonce);
-            $display("       nonce (adjusted) = %0d", nonce-2);
-            $display("       H (actual)       = %h", uut.pipelines[0].H_u1[255:128]);
-            $display("                          %h", uut.pipelines[0].H_u1[127:  0]);
-            $display("       H (expected)     = %h", H_expected[255:128]);
-            $display("                          %h", H_expected[127:  0]);
           end
         else
           begin
             $display("\033\133\063\061\155[FAIL]\033\133\060\155 `shapool`: single track, BTC four-zeroes");
-            // TODO inputs
             $display("");
             $display("       success          = %0d", success);
             $display("       nonce            = %0d", nonce);
@@ -199,4 +178,4 @@ module shapool_test();
       $finish;
     end
 
-endmodule // shapool_test
+endmodule

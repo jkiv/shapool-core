@@ -1,11 +1,11 @@
-.phony : test_benches 
-test_benches: sha_round_usage_tb sha_unit_usage_tb shapool_usage_tb external_io_usage_tb
+.phony : run
+run: sha_round_usage_tb sha_unit_usage_tb shapool_usage_tb external_io_usage_tb
 
 .phony : hardware_tests 
 hardware_tests : btc_four_zeroes 
 
 .phony : all
-all : test_benches hardware_tests	
+all : run hardware_tests	
 
 .phony : clean
 clean : clean_test_benches clean_hardware_tests

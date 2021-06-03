@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "munit/munit.h"
 #include "icepool.h"
 
-#define DEVICE_COUNT 3
 #define DEVICE_CONFIG_LEN (8/8)
-#define DEVICE_RESULT_LEN (32/8) 
-#define JOB_CONFIG_LEN (360/8)
+#define DEVICE_RESULT_LEN (40/8) 
+#define JOB_CONFIG_LEN (352/8)
 
 void print_buffer(const uint8_t* buffer, size_t buffer_len)
 {
@@ -19,20 +19,12 @@ void print_buffer(const uint8_t* buffer, size_t buffer_len)
     }
 }
 
-void test_spi_daisy(IcepoolContext* ctx)
+void test_spi_daisy_no_exec(IcepoolContext* ctx)
 {
-
     // Set up device data
-    uint8_t device_configs[DEVICE_COUNT*DEVICE_CONFIG_LEN] = {
-        // Device 3
-        0x45,
-        // Device 2
-        0x23,
-        // Device 1
-        0x01
-    };
+    uint8_t device_config[DEVICE_CONFIG_LEN] = { 0 };
 
-    uint8_t results[DEVICE_COUNT*DEVICE_CONFIG_LEN] = { 0 };
+    uint8_t result[DEVICE_CONFIG_LEN] = { 0 };
 
     // Try immediate read-after-write
 
@@ -40,22 +32,28 @@ void test_spi_daisy(IcepoolContext* ctx)
 
     icepool_spi_assert_daisy(ctx);
 
-    icepool_spi_write_daisy(ctx, device_configs, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    icepool_spi_write_daisy(ctx, device_config, DEVICE_CONFIG_LEN);
 
-    icepool_spi_read_daisy(ctx, results, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    icepool_spi_read_daisy(ctx, result, DEVICE_CONFIG_LEN);
 
     icepool_spi_deassert_daisy(ctx);
+    
+    munit_assert_memory_equal(DEVICE_CONFIG_LEN, device_config, result);
+}
 
-    printf("SPI1 (daisy) immediate read:\n");
-    printf("write:\n");
-    print_buffer(device_configs, DEVICE_COUNT*DEVICE_CONFIG_LEN);
-    printf("read:\n");
-    print_buffer(results, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+void test_spi_daisy_with_exec(IcepoolContext* ctx)
+{
+    // Set up device data
+    uint8_t device_config[DEVICE_CONFIG_LEN] = { 0 };
+
+    uint8_t result[DEVICE_CONFIG_LEN] = { 0 };
 
     // Try EXEC and reset 
+    icepool_assert_reset(ctx);
+
     icepool_spi_assert_daisy(ctx);
 
-    icepool_spi_write_daisy(ctx, device_configs, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    icepool_spi_write_daisy(ctx, device_config, DEVICE_CONFIG_LEN);
 
     icepool_spi_deassert_daisy(ctx);
 
@@ -67,25 +65,17 @@ void test_spi_daisy(IcepoolContext* ctx)
 
     icepool_spi_assert_daisy(ctx);
 
-    icepool_spi_read_daisy(ctx, results, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    icepool_spi_read_daisy(ctx, result, DEVICE_CONFIG_LEN);
 
     icepool_spi_deassert_daisy(ctx);
 
-    printf("SPI1 (daisy) read after reset:\n");
-    print_buffer(results, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    munit_assert_memory_equal(DEVICE_CONFIG_LEN, device_config, result);
 }
 
-void test_btc(IcepoolContext *ctx)
+void test_btc_four_zeroes(IcepoolContext *ctx)
 {
     // Set up device data
-    uint8_t device_configs[DEVICE_COUNT*DEVICE_CONFIG_LEN] = {
-        // Device 3
-        0xB0,
-        // Device 2
-        0x60,
-        // Device 1
-        0x00
-    };
+    uint8_t device_config[DEVICE_CONFIG_LEN] = { 0 };
 
     // Set up job data
     uint8_t job_config[JOB_CONFIG_LEN] = {
@@ -97,11 +87,9 @@ void test_btc(IcepoolContext *ctx)
         // Message head:
         0xdc, 0x14, 0x17, 0x87, 0x35, 0x8b, 0x05, 0x53,
         0x53, 0x5f, 0x01, 0x19,
-        // Difficulty offset (BASE_DIFFICULTY + 3 = 4 bits)
-        0x03
     };
-        // Expected nonce: 39
-        // Expected hash: c7f3244e501edf780c420f63a4266d30ffe1bdb53f4fde3ccd688604f15ffd03
+    // Expected nonce: 39
+    // Expected hash: c7f3244e501edf780c420f63a4266d30ffe1bdb53f4fde3ccd688604f15ffd03
 
     // Assert reset_n
     icepool_assert_reset(ctx);
@@ -109,7 +97,7 @@ void test_btc(IcepoolContext *ctx)
     // Send device data
     icepool_spi_assert_daisy(ctx);
 
-    icepool_spi_write_daisy(ctx, device_configs, DEVICE_COUNT*DEVICE_CONFIG_LEN);
+    icepool_spi_write_daisy(ctx, device_config, DEVICE_CONFIG_LEN);
 
     icepool_spi_deassert_daisy(ctx);
 
@@ -124,26 +112,31 @@ void test_btc(IcepoolContext *ctx)
     icepool_deassert_reset(ctx);
 
     // Wait for READY
-    printf("Waiting for READY");
-    while(!icepool_poll_ready(ctx)) { printf("."); fflush(stdout); };
-    printf("\nREADY!\n");
+    bool ready = false;
+    for (size_t i = 0; !ready && i < 1e9; i++)
+    {
+        ready = icepool_poll_ready(ctx);
+    }
+
+    munit_assert_true(ready);
 
     // Get result
 
-    uint8_t results[DEVICE_COUNT*DEVICE_RESULT_LEN] = { 0xFF };
+    uint8_t expected_result[DEVICE_RESULT_LEN] = { 0x01, 0x00, 0x00, 0x00, 0x29 };
+    uint8_t result[DEVICE_RESULT_LEN] = { 0xFF };
 
     icepool_spi_assert_daisy(ctx);
 
-    icepool_spi_read_daisy(ctx, results, DEVICE_COUNT*DEVICE_RESULT_LEN);
+    icepool_spi_read_daisy(ctx, result, DEVICE_RESULT_LEN);
 
     icepool_spi_assert_daisy(ctx);
 
     // Assert reset_n
     icepool_assert_reset(ctx);
 
-    // Test nonce
+    print_buffer(result, DEVICE_RESULT_LEN);
 
-    print_buffer(results, DEVICE_COUNT*DEVICE_RESULT_LEN);
+    munit_assert_memory_equal(DEVICE_RESULT_LEN, result, expected_result);
 }
 
 int main()
@@ -156,15 +149,11 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    // Test daisy-chained SPI 
+    test_spi_daisy_no_exec(ctx);
 
-    test_spi_daisy(ctx);
+    test_spi_daisy_with_exec(ctx);
 
-    // Test BTC
-
-    test_btc(ctx);
-
-    // Clean up
+    test_btc_four_zeroes(ctx);
 
     icepool_free(ctx);
 

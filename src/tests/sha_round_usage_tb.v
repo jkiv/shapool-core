@@ -63,21 +63,11 @@ module sha_round_usage_tb();
 
           if (S1 == S1_expected[i])
             begin
-              $display("\033\133\063\062\155[PASS]\033\133\060\155 `sha_round`, case %0d", i);
-              $display("       S0            = %h", S0[255:128]);
-              $display("                       %h", S0[127:  0]);
-              $display("       Kt            = %h", Kt);
-              $display("       Wt            = %h", Wt);
-              $display("");
-              $display("       S1 (actual)   = %h", S1[255:128]);
-              $display("                       %h", S1[127:  0]);
-              $display("       S1 (expected) = %h", S1_expected[i][255:128]);
-              $display("                       %h", S1_expected[i][127:  0]);
-              $display("");
+              $display("\033\133\063\062\155[PASS]\033\133\060\155 `sha_round`: case %0d", i);
             end
           else
             begin
-              $display("\033\133\063\061\155[FAIL]\033\133\060\155 `sha_round`, case %0d", i);
+              $display("\033\133\063\061\155[FAIL]\033\133\060\155 `sha_round`: case %0d", i);
               $display("       S0            = %h", S0[255:128]);
               $display("                       %h", S0[127:  0]);
               $display("       Kt            = %h", Kt);

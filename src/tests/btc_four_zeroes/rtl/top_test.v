@@ -22,11 +22,11 @@ module top_test
 
     parameter POOL_SIZE       = 1;
     parameter POOL_SIZE_LOG2  = 0;
-    parameter BASE_DIFFICULTY = 64;
+    parameter BASE_DIFFICULTY = 4; // Max. ~112 with 2 cores, 256 with 1 core
 
-    // 12 MHz ~ 24 MHz
+    // 12 MHz ~ 30 MHz
     parameter PLL_DIVR = 4'b0000;
-    parameter PLL_DIVF = 7'b1111111;
+    parameter PLL_DIVF = 7'b1001111;
     parameter PLL_DIVQ = 3'b101;
 
     // Multiply input clock signal using SB_PLL40_CORE
@@ -38,7 +38,8 @@ module top_test
         .DIVF(PLL_DIVF),
         .DIVQ(PLL_DIVQ),
         .FILTER_RANGE(3'b001)
-    ) uut (
+    )
+    pll (
         .LOCK(pll_locked),
         .RESETB(1'b1),
         .BYPASS(1'b0),

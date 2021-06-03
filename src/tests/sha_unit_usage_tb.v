@@ -184,21 +184,11 @@ module sha_unit_usage_tb();
         end
       if (H == H_fips1)
         begin
-          $display("\033\133\063\062\155[PASS]\033\133\060\155 `sha_unit`, FIPS-1 Single block");
-          $display("       H0           = %h", SHA256_H0[255:128]);
-          $display("                      %h", SHA256_H0[127:  0]);
-          $display("       M            = %h", M_fips1[511:384]);
-          $display("                      %h", M_fips1[383:256]);
-          $display("                      %h", M_fips1[255:128]);
-          $display("                      %h", M_fips1[127:  0]);
-          $display("       H (actual)   = %h", H[255:128]);
-          $display("                      %h", H[127:  0]);
-          $display("       H (expected) = %h", H_fips1[255:128]);
-          $display("                      %h", H_fips1[127:  0]);
+          $display("\033\133\063\062\155[PASS]\033\133\060\155 `sha_unit`: FIPS-1 Single block");
         end
       else
         begin
-          $display("\n\033\133\063\061\155[FAIL]\033\133\060\155 `sha_unit`, FIPS-1 Single block");
+          $display("\n\033\133\063\061\155[FAIL]\033\133\060\155 `sha_unit`: FIPS-1 Single block");
           $display("       H0           = %h", SHA256_H0[255:128]);
           $display("                      %h", SHA256_H0[127:  0]);
           $display("       M            = %h", M_fips1[511:384]);

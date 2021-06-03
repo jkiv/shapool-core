@@ -20,10 +20,6 @@ module top
   status_led_n_out
 );
 
-    localparam DEVICE_CONFIG_WIDTH = 8;            // nonce_start
-    localparam JOB_CONFIG_WIDTH    = 256 + 96 + 8; // sha_state + message_head + difficulty
-    localparam RESULT_DATA_WIDTH   = 32;           // nonce
-
     localparam NONCE_WIDTH = 32 - POOL_SIZE_LOG2;
 
     parameter POOL_SIZE      = 2;
@@ -89,34 +85,35 @@ module top
 
     // Device parameters
     //    * 8'  nonce starting count
+    wire [7:0] device_config;
     wire [7:0] nonce_start;
+
+    assign nonce_start = device_config[7:0];
     
     //  Job parameters
+    wire [351:0] job_config;
     //    * 256' initial SHA256 state
     //    *  96' start of first message block
-    //    *   8' difficulty adjustment
     wire [255:0] sha_state;
     wire [95:0] message_head;
-    /* verilator lint_off UNUSED */
-    wire [7:0] difficulty;
-    /* verilator lint_on UNUSED */
 
-    // Whether any unit on this device was successful
+    assign sha_state    = job_config[351:96];
+    assign message_head = job_config[ 95: 0];
+
+    // `shapool` results
     wire success;
+    wire [31:0] nonce;
+    wire [7:0] match_flags;
 
-    // Whether or not to drive `ready_n_od_out` low (1) or keep high-impedance (0).
+    // External READY flag (drives open-drain `ready_n_od_out`)
     wire ready;
 
-    // Nonce result
-    wire [31:0] nonce;
+    assign ready_n_od_out = ready ? 1'b0 : 1'bz;
 
     // External IO interface
     external_io #(
       .POOL_SIZE(POOL_SIZE),
-      .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-      .DEVICE_CONFIG_WIDTH(DEVICE_CONFIG_WIDTH),
-      .JOB_CONFIG_WIDTH(JOB_CONFIG_WIDTH),
-      .RESULT_DATA_WIDTH(RESULT_DATA_WIDTH)
+      .POOL_SIZE_LOG2(POOL_SIZE_LOG2)
     ) ext_io (
       clk_in,
       g_reset_n,
@@ -130,35 +127,23 @@ module top
       sdo1_out,
       cs1_n_in,
       // Stored data
-      { nonce_start },
-      { sha_state, message_head, difficulty },
+      device_config,
+      job_config,
       // Control signals
       core_reset_n,
       // From shapool
-      match_flags,
-      nonce,
       success,
+      { match_flags, nonce },
       // READY signal
       ready
     );
 
-    // Difficulty bitmask lookup
-    // -- host-provided value is number of zeros to _add_ to BASE_DIFFICULTY
-    // -- convert 4-bit difficulty to 16-bit zeros mask (0-15 bits)
-    // TODO make difficulty_bitmask 15 bits?
-    wire [15:0] difficulty_bitmask;
-    difficulty_map dm (
-      .clk(clk_in),
-      .en(1'b1),
-      .addr(difficulty[3:0]),
-      .difficulty(difficulty_bitmask)
-    );
-
     // Hasher pool
-    shapool
-    #(.POOL_SIZE(POOL_SIZE),
+    shapool #(
+      .POOL_SIZE(POOL_SIZE),
       .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-      .BASE_DIFFICULTY(BASE_DIFFICULTY))
+      .BASE_DIFFICULTY(BASE_DIFFICULTY)
+    )
     pool (
       // Control
       .clk(clk_in),
@@ -166,16 +151,13 @@ module top
       // Parameters
       .sha_state(sha_state),
       .message_head(message_head),
-      .difficulty_bm(difficulty_bitmask),
       .nonce_start_MSB(nonce_start),
       // Results
-      .success_out(success),
-      .nonce_out(nonce),
+      .success(success),
+      .nonce(nonce),
       .match_flags(match_flags)
     );
 
-    assign ready_n_od_out = ready ? 1'b0 : 1'bz;
-
-    assign status_led_n_out = reset_n_in & ~ready;
+    assign status_led_n_out = ~(success | ready);
 
 endmodule

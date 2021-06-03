@@ -20,9 +20,8 @@ module external_io(
     // Control signals
     core_reset_n,
     // From shapool
-    shapool_match_flags,
-    shapool_result,
     shapool_success,
+    shapool_result,
     // READY signal
     ready
 );
@@ -30,9 +29,9 @@ module external_io(
     parameter POOL_SIZE = 2;
     parameter POOL_SIZE_LOG2 = 1;
 
-    parameter DEVICE_CONFIG_WIDTH = 8;            // nonce_start
-    parameter JOB_CONFIG_WIDTH    = 256 + 96 + 8; // sha_state + message_head + difficulty
-    parameter RESULT_DATA_WIDTH   = 32 + 8;       // nonce + match flags
+    parameter DEVICE_CONFIG_WIDTH = 8;        // nonce_start
+    parameter JOB_CONFIG_WIDTH    = 256 + 96; // sha_state + message_head
+    parameter RESULT_DATA_WIDTH   = 32 + 8;   // nonce + match flags
     // FUTURE scale match_flags?
 
     // Inputs and outputs
@@ -51,31 +50,31 @@ module external_io(
 
     // Stored data
     output reg [DEVICE_CONFIG_WIDTH-1 : 0] device_config = 0;
-    output reg [   JOB_CONFIG_WIDTH-1 : 0] job_config    = {
-        128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5,
-        128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df,
-        96'hdc141787_358b0553_535f0119,
-        8'd3
-    };
+    output reg [   JOB_CONFIG_WIDTH-1 : 0] job_config    = 0;
+    // output reg [   JOB_CONFIG_WIDTH-1 : 0] job_config = {
+    //   128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5, // SHA starting state
+    //   128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df, // ...
+    //   96'hdc141787_358b0553_535f0119            // Start of message block
+    // };
 
     output reg core_reset_n = 1;
 
     reg [RESULT_DATA_WIDTH-1 : 0] result_data = 0;
 
     // From shapool
-    input wire [POOL_SIZE-1:0] shapool_match_flags;
-    input wire [RESULT_DATA_WIDTH-1 : 0] shapool_result;
     input wire shapool_success;
+    input wire [RESULT_DATA_WIDTH-1:0] shapool_result;
 
     // READY signal
     output reg ready;
 
     // State machine definition
-    localparam STATE_IDLE = 2'b00,
-               STATE_EXEC = 2'b01,
-               STATE_DONE = 2'b10;
+    localparam STATE_RESET = 2'b00,
+               STATE_LOAD  = 2'b01,
+               STATE_EXEC  = 2'b10,
+               STATE_DONE  = 2'b11;
 
-    reg [1:0] state = STATE_IDLE;
+    reg [1:0] state = STATE_RESET;
 
     // Synchronize SPI signals to reference `clk`
 
@@ -109,84 +108,92 @@ module external_io(
       begin
         case(state)
 
-          STATE_IDLE:
+          STATE_RESET:
             begin
-              // Deassert READY signal
-              ready <= 0;
-              core_reset_n <= 0;
+              ready <= 0;          // Deassert READY
+              core_reset_n <= 0;   // Halt core
+              state <= STATE_LOAD;
+            end
+
+          STATE_LOAD:
+            begin
 
               // Go to STATE_EXEC when `reset_n` is deasserted
               if (reset_n)
                 begin
-                  state <= STATE_EXEC;
                   core_reset_n <= 1;
+                  state <= STATE_EXEC;
                 end
 
               // Allow `job_config` and `device_config` to be shifted in while `reset_n` is asserted.
               else
                 begin
-
-                  // Shift in `job_config` (msb-first) on rising edge
+                  // SPI0
                   if (!cs0_n && sck0_sync_rising_edge)
                     job_config <= { job_config[JOB_CONFIG_WIDTH-2 : 0], sdi0_sync[1] };
                   
-                  // Shift in `device_config` (msb-first) on rising edge
+                  // SPI1
                   if (!cs1_n && sck1_sync_rising_edge)
                     device_config <= { device_config[DEVICE_CONFIG_WIDTH-2 : 0], sdi1_sync[1] };
-
                 end
             end
+
           STATE_EXEC:
+            begin
+              core_reset_n <= 1;
 
-             if (shapool_success)
-              begin
-                state <= STATE_DONE;
-                ready <= 1;        // Notify host
-                core_reset_n <= 0; // Halt core
-
-                /* verilator lint_off WIDTHCONCAT */
-
-                // NOTE: The top POOL_SIZE_LOG2 bits are zeroed.
-                //       Host needs to perform check on all possible combination
-                //       of these bits.
-
-                // NOTE: When "success" occurs, the current nonce value is
-                //       one value ahead of the nonce value that caused the success.
-                //       This is because the nonce value feeds the first hash unit,
-                //       whereas success is determined by the result of the
-                //       second.
-                //       In order to save resources, the host is responsible for
-                //       correcting this offset. 
-                result_data <= { shapool_result, {(8-POOL_SIZE){1'b0}}, shapool_match_flags};
-                /* verilator lint_on WIDTHCONCAT */
-              end
-
-            // Go to STATE_DONE when `cs1_n` is asserted
-            // FUTURE neighbour READY 
-            else if (!cs1_n)
-              begin
-                ready <= 1;
-                core_reset_n <= 0;   // Halt core
-                state <= STATE_DONE;
-                result_data <= 0;
-              end
-
-            // Go to STATE_IDLE when `reset_n` is asserted
-            else if (!reset_n)
-                state <= STATE_IDLE;
+              // Go to STATE_RESET when `reset_n` is asserted
+              if (!reset_n)
+                begin
+                  state <= STATE_RESET;
+                end
+              // Go to STATE_DONE when `shapool_success` is asserted
+              else if (shapool_success)
+                begin
+                  state <= STATE_DONE;
+                  ready <= 1;
+                  core_reset_n <= 0;
+  
+                  /* verilator lint_off WIDTHCONCAT */
+  
+                  // NOTE: The top POOL_SIZE_LOG2 bits are zeroed.
+                  //       Host needs to perform check on all possible combination
+                  //       of these bits.
+  
+                  // NOTE: When "success" occurs, the current nonce value is
+                  //       one value ahead of the nonce value that caused the success.
+                  //       This is because the nonce value feeds the first hash unit,
+                  //       whereas success is determined by the result of the
+                  //       second.
+                  //       In order to save resources, the host is responsible for
+                  //       correcting this offset. 
+                  result_data <= shapool_result;
+                  /* verilator lint_on WIDTHCONCAT */
+                end
+              // Go to STATE_DONE when `cs1_n` is asserted
+              // FUTURE neighbour READY 
+              else if (!cs1_n)
+                begin
+                  state <= STATE_DONE;
+                  ready <= 1;
+                  core_reset_n <= 0;
+                  result_data <= 0;
+                end
+            end
 
           STATE_DONE:
             begin
               if (!reset_n)
-                state <= STATE_IDLE;
+                state <= STATE_RESET;
 
               // Shift-in `result_data` (msb-first) on rising edge
               if (!cs1_n && sck1_sync_rising_edge)
                 result_data <= { result_data[RESULT_DATA_WIDTH-2 : 0], sdi1_sync[1] };
+
             end
 
           default:
-            state <= STATE_IDLE;
+            state <= STATE_RESET;
 
         endcase
       end

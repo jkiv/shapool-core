@@ -9,8 +9,8 @@ module external_io_usage_tb();
   `define VERILATOR
   `define DEBUG_VERBOSE
 
-  localparam spi_bit_half_period = 4;
-  localparam reset_hold_period = 2;
+  localparam spi_bit_half_period = 6; // 3 clock cycles
+  localparam reset_hold_period = 2;   // 1 clock cycle
 
   localparam JOB_CONFIG_WIDTH = 8;
   localparam DEVICE_CONFIG_WIDTH = 8;
@@ -66,12 +66,6 @@ module external_io_usage_tb();
     ready
   );
 
-  // Test case
-  // * input signals are double-registered (2 cycle delay)
-  // * device_config (SPI1) works properly
-  // * job_config (SPI0) works properly
-  // * shapool_succes + SPI1 works properly
-
   reg [31:0] i;
 
   localparam [39:0] expected_result = 40'hEEDDCCBB_AA;
@@ -85,9 +79,9 @@ module external_io_usage_tb();
   // Generate clock
   always
   begin
-      clk = 0;
+      clk <= 0;
       #1;
-      clk = 1;
+      clk <= 1;
       #1;
   end
 
@@ -98,17 +92,17 @@ module external_io_usage_tb();
       $dumpvars;
 
       // Initial states
-      reset_n = 0;
-      sck0 = 0;
-      sdi0 = 0;
-      cs0_n = 1;
+      reset_n <= 0;
+      sck0 <= 0;
+      sdi0 <= 0;
+      cs0_n <= 1;
 
-      sck1 = 0;
-      sdi1 = 0;
-      cs1_n = 1;
-      shapool_result = 32'hEEDDCCBB;
-      shapool_match_flags = 8'hAA;
-      shapool_success = 0;
+      sck1 <= 0;
+      sdi1 <= 0;
+      cs1_n <= 1;
+      shapool_result <= 32'hEEDDCCBB;
+      shapool_match_flags <= 8'hAA;
+      shapool_success <= 0;
 
       #10;
 
@@ -127,24 +121,25 @@ module external_io_usage_tb();
         end
 
       // (SPI Mode 0,0)
-      cs0_n = 0;
+      cs0_n <= 0;
+      #reset_hold_period;
 
       for (i = 0; i < JOB_CONFIG_WIDTH; i = i + 1)
         begin
           // Data out before rising edge
-          sdi0 = test_job_config[JOB_CONFIG_WIDTH-1];
+          sdi0 <= test_job_config[JOB_CONFIG_WIDTH-1];
           test_job_config <= { test_job_config[JOB_CONFIG_WIDTH-2:0], 1'b0 };
           #spi_bit_half_period;
 
           // Rising edge (uut samples)
-          sck0 = 1;
+          sck0 <= 1;
           #spi_bit_half_period;
 
           // Falling edge (next bit out)
-          sck0 = 0;
+          sck0 <= 0;
         end
 
-      cs0_n = 1;
+      cs0_n <= 1;
       #10;
 
       if (uut.job_config == expected_job_config)
@@ -163,26 +158,25 @@ module external_io_usage_tb();
       ///////////////////////////////////////////////
 
       // (SPI Mode 0,0)
-      cs1_n = 0;
+      cs1_n <= 0;
 
       for (i = 0; i < DEVICE_CONFIG_WIDTH; i = i + 1)
         begin
           // Data out before rising edge
-          sdi1 = test_device_config[DEVICE_CONFIG_WIDTH-1];
+          sdi1 <= test_device_config[DEVICE_CONFIG_WIDTH-1];
           test_device_config <= { test_device_config[DEVICE_CONFIG_WIDTH-2:0], 1'b0 };
           #spi_bit_half_period;
 
           // Rising edge (uut samples)
-          sck1 = 1;
+          sck1 <= 1;
           #spi_bit_half_period;
 
           // Falling edge (next bit out)
-          sck1 = 0;
+          sck1 <= 0;
         end
 
-      cs1_n = 1;
-      reset_n = 1;
-      #reset_hold_period;
+      cs1_n <= 1;
+      reset_n <= 1;
 
       if (uut.device_config == expected_device_config)
         begin
@@ -201,33 +195,32 @@ module external_io_usage_tb();
       // Test SPI1 on success (clock out result) //
       /////////////////////////////////////////////
 
-      shapool_success = 1;
+      shapool_success <= 1;
 
       // (SPI Mode 0,0)
-      cs1_n = 0;
-      sdi1 = 0;
+      cs1_n <= 0;
+      sdi1 <= 0;
 
       for (i = 0; i < 40; i = i + 1)
         begin
-          // data out on 
+          // data out
           #spi_bit_half_period;
 
           // Rising edge (sample)
           test_result <= { test_result[38:0], sdo1 };
-          sck1 = 1;
+          sck1 <= 1;
           #spi_bit_half_period;
 
           // Falling edge (next bit out)
-          sck1 = 0;
+          sck1 <= 0;
         end
 
-      cs1_n = 1;
+      cs1_n <= 1;
       #reset_hold_period;
 
       if (test_result == expected_result)
         begin
           $display("\033\133\063\062\155[PASS]\033\133\060\155 `external_io`: shift out result");
-          $display("test_result: %h", test_result);
         end
       else
         begin
