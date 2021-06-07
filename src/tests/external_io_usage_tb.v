@@ -59,16 +59,15 @@ module external_io_usage_tb();
     // Control flags
     core_reset_n,
     // From shapool
-    shapool_match_flags,
-    shapool_result,
     shapool_success,
+    { shapool_match_flags, shapool_result},
     // READY signal
     ready
   );
 
   reg [31:0] i;
 
-  localparam [39:0] expected_result = 40'hEEDDCCBB_AA;
+  localparam [39:0] expected_result = 40'hAA_EEDDCCBB;
   localparam [DEVICE_CONFIG_WIDTH-1:0] expected_device_config = 8'b10101010;
   localparam [JOB_CONFIG_WIDTH-1:0] expected_job_config = 8'b10101010;
 

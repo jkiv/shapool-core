@@ -13,9 +13,9 @@ module shapool_test();
 
   `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1
 
-  localparam POOL_SIZE = 1;
+  localparam POOL_SIZE      = 1;
   localparam POOL_SIZE_LOG2 = 0;
-  localparam BASE_DIFFICULTY = 4;
+  localparam BASE_TARGET    = 4;
 
   localparam [359:0] job_parameters = {
     128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5, // SHA starting state
@@ -71,7 +71,7 @@ module shapool_test();
   shapool
   #(.POOL_SIZE(POOL_SIZE),
     .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-    .BASE_DIFFICULTY(BASE_DIFFICULTY))
+    .BASE_TARGET(BASE_TARGET))
   uut (
     // Control
     clk,

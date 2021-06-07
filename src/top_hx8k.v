@@ -18,9 +18,9 @@ module top_hx8k
   // Indicator LED
   status_led_n_out
 );
-    parameter POOL_SIZE       = 2;
-    parameter POOL_SIZE_LOG2  = 1;
-    parameter BASE_DIFFICULTY = 64;
+    parameter POOL_SIZE      = 2;
+    parameter POOL_SIZE_LOG2 = 1;
+    parameter BASE_TARGET    = 42;
 
     // 12 MHz ~ 30 MHz
     parameter PLL_DIVR = 4'b0000;
@@ -68,7 +68,7 @@ module top_hx8k
     top #(
       .POOL_SIZE(POOL_SIZE),
       .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-      .BASE_DIFFICULTY(BASE_DIFFICULTY)
+      .BASE_TARGET(BASE_TARGET)
     )
     u (
       g_clk,

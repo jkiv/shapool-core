@@ -25,20 +25,21 @@ module top
     parameter POOL_SIZE      = 2;
     parameter POOL_SIZE_LOG2 = 1;
 
-    // Minimum difficulty, in number of leading zeros
-    // -- minimum 64, maximum 240
-    /*
-      DIFFICULTY example:
+    // Target range in number of leading zeros:
+    //   * minimum: 32
+    //   * maximum: 224
+    //
+    // TARGET example:
+    //
+    //   Difficulty = 4022059196164
+    //
+    //   FLOOR(LOG2(0x00000000ffffffff...ffff / 4022059196164))
+    //     = 182
+    //
+    //   Therefore, 2^182 is nearest power-2 target less than the actual
+    //   target and 74 (=256-182) leading zeros are required to be <= 2^182.
 
-        BTC difficulty = 4022059196164
-
-        FLOOR(LOG2(0x00000000ffffffff...ffff / 4022059196164))
-          = 182
-
-        Therefore, 2^182 is nearest power-2 target less than the actual
-        target and 74 (=256-182) leading zeros are required to be <= 2^182.
-    */
-    parameter BASE_DIFFICULTY = 64;
+    parameter BASE_TARGET = 32;
 
     // Inputs and Outputs
 
@@ -142,7 +143,7 @@ module top
     shapool #(
       .POOL_SIZE(POOL_SIZE),
       .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-      .BASE_DIFFICULTY(BASE_DIFFICULTY)
+      .BASE_TARGET(BASE_TARGET)
     )
     pool (
       // Control

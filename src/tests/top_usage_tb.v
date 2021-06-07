@@ -23,16 +23,14 @@ module test_top();
 
   `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1:
 
-  localparam POOL_SIZE = 1;
+  localparam POOL_SIZE      = 1;
   localparam POOL_SIZE_LOG2 = 0;
-
-  localparam BASE_DIFFICULTY = 1; // One fixed leading zero, plus those
-                                  // indicated in job parameters (4 total)
+  localparam BASE_TARGET    = 3;
 
   top
   #(.POOL_SIZE(POOL_SIZE),
     .POOL_SIZE_LOG2(POOL_SIZE_LOG2),
-    .BASE_DIFFICULTY(BASE_DIFFICULTY))
+    .BASE_TARGET(BASE_TARGET))
   uut (
     clk_in,
     reset_n_in,
@@ -59,11 +57,7 @@ module test_top();
   localparam [359:0] test_spi0_data0 = {
     128'hdc6a3b8d_0c69421a_cb1a5434_e536f7d5, // SHA starting state
     128'hc3c1b9e4_4cbb9b8f_95f0172e_fc48d2df, // ...
-    96'hdc141787_358b0553_535f0119,           // Start of message block
-    8'd3                                      // Difficutly offset
-                                              // -- 1 from BASE_DIFFICULTY, 3
-                                              //    from this parameter,
-                                              //    4 total leading zeros
+    96'hdc141787_358b0553_535f0119            // Start of message block
   };
 
   localparam [7:0] test_spi1_data0 = {
@@ -140,8 +134,8 @@ module test_top();
       for (i = 0; i < 360; i = i + 1)
         begin
           // Simulate FIFO into device
-          #1 sdi0_in = test_spi0_data[359];
-          test_spi0_data <= { test_spi0_data[358:0], 1'b0 };
+          #1 sdi0_in = test_spi0_data[351];
+          test_spi0_data <= { test_spi0_data[350:0], 1'b0 };
 
           #1 sck0_in = 1;
           
@@ -173,8 +167,6 @@ module test_top();
       $display("  SHA256 state:       %h", uut.sha_state[255:128]);
       $display("                      %h", uut.sha_state[127:0]);
       $display("  message head:       %h", uut.message_head);
-      $display("  difficulty:         %h", uut.difficulty);
-      $display("  difficulty_bitmask: %h", uut.difficulty_bitmask);
 
       /////////////////////////////////
       // Reset and run until success //
@@ -209,7 +201,7 @@ module test_top();
               $display("  u1.Wt: %h", uut.pool.tracks[0].u1.Wt);
               $display("  H_u1 (bs): %h", uut.pool.tracks[0].H_bs);
               $display("  H: %h", uut.pool.tracks[0].H);
-              $display("    test bits: %h", { uut.pool.tracks[0].H[BASE_DIFFICULTY+16-1:16], uut.pool.tracks[0].H[15:0] & uut.pool.difficulty_bm });
+              $display("    test bits: %h", { uut.pool.tracks[0].H[BASE_TARGET+16-1:16], uut.pool.tracks[0].H[15:0] & uut.pool.difficulty_bm });
               $display("");
 
               #1 clk_in = 1;

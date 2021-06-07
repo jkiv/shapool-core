@@ -36,7 +36,7 @@ sha_unit_usage_tb : sha_unit_usage_tb.out
 
 ##
 
-shapool_usage_tb.out : shapool_usage_tb.v ../shapool.v ../difficulty_map.v ../SHA256_K.v ../sha_unit.v ../w_expand.v ../sha_round.v
+shapool_usage_tb.out : shapool_usage_tb.v ../shapool.v ../SHA256_K.v ../sha_unit.v ../w_expand.v ../sha_round.v
 	iverilog -o $@  $^
 
 shapool_usage_tb : shapool_usage_tb.out
