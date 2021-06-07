@@ -158,6 +158,6 @@ module top
       .match_flags(match_flags)
     );
 
-    assign status_led_n_out = ~(success | ready);
+    assign status_led_n_out = g_core_reset_n;
 
 endmodule

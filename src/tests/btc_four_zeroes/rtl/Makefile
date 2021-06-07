@@ -5,7 +5,6 @@ SHAPOOL_DEPS=$(SHAPOOL_PATH)top.v \
 			 $(SHAPOOL_PATH)sha_round.v \
 			 $(SHAPOOL_PATH)w_expand.v \
 			 $(SHAPOOL_PATH)SHA256_K.v \
-			 $(SHAPOOL_PATH)difficulty_map.v \
 			 $(SHAPOOL_PATH)external_io.v
 
 TEST_NAME=btc_four_zeroes

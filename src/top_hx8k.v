@@ -18,8 +18,6 @@ module top_hx8k
   // Indicator LED
   status_led_n_out
 );
-    `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1
-
     parameter POOL_SIZE       = 2;
     parameter POOL_SIZE_LOG2  = 1;
     parameter BASE_DIFFICULTY = 64;

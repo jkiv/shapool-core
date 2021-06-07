@@ -8,7 +8,7 @@ all: shapool-ice40hx8k-b-evn.bin shapool-icepool-ice40hx8k.bin # shapool-icepool
 
 .phony: lint
 
-lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.v
 	verilator -Wall -cc top.v
 
 # Clean up
@@ -23,10 +23,10 @@ clean :
 
 # Synthesize for device type
 
-shapool-ice40-hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+shapool-ice40-hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.v
 	yosys -p 'synth_ice40 -top top_hx8k -json $@ -abc2 -retime' $^
 
-shapool-ice40-up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v difficulty_map.v external_io.v
+shapool-ice40-up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.v
 	yosys -p 'synth_ice40 -top top_up5k -json $@ -abc2 -retime' $^
 
 # Route for target board
