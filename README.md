@@ -1,6 +1,6 @@
 # shapool-core
 
-**shapool-core** is an FPGA core for SHA256d mining (e.g. BTC) for use with
+`shapool-core` is an FPGA core for SHA256d mining (e.g. BTC) for use with
 Lattice Semiconductor [iCE40](https://www.latticesemi.com/iCE40) devices using the open-source [Project IceStorm](http://www.clifford.at/icestorm/)
 toolchain.
 
@@ -13,10 +13,11 @@ This project aims to support multiple targets including
 * [jkiv/icepool-board](https://github.com/jkiv/icepool-board)
 * ... and others.
 
-Support for [ECP5](https://www.latticesemi.com/Products/FPGAandCPLD/ECP5) boards using the [Project Trellis](https://github.com/YosysHQ/prjtrellis) open-source toolchain is [planned](https://github.com/jkiv/shapool-core/issues/5) as well.
+(Support for [ECP5](https://www.latticesemi.com/Products/FPGAandCPLD/ECP5) boards using the [Project Trellis](https://github.com/YosysHQ/prjtrellis) open-source toolchain is [planned](https://github.com/jkiv/shapool-core/issues/5) as well.)
+
+### Support
 
 Please consider supporting this project and others like it by donating:
 
-* ☕ ko-fi: [jkiv_](https://ko-fi.com/jkiv_)
-* XBT: 13zRrs1YDdooUN5WtfXRSDn8KnJdok4qG9
-
+* ☕: [ko-fi.com/jkiv_](https://ko-fi.com/jkiv_)
+* ₿: `13zRrs1YDdooUN5WtfXRSDn8KnJdok4qG9`
