@@ -25,14 +25,21 @@ class ShaState:
         _update_state = _ffi(_midstate, 'update_state', None, [ctypes.c_char_p, ctypes.c_char_p,])
         _update_state(self._state, block)
 
-    def as_b64(self):
-        return binascii.b2a_base64(self.as_bin()).decode('utf-8')
+    def as_b64(self, byte_swap=False):
+        return binascii.b2a_base64(self.as_bin(byte_swap)).decode('utf-8')
 
-    def as_hex(self):
-        return binascii.b2a_hex(self.as_bin()).decode('utf-8')
+    def as_hex(self, byte_swap=False):
+        return binascii.b2a_hex(self.as_bin(byte_swap)).decode('utf-8')
 
-    def as_bin(self):
-        return bytes(self._state)
+    def as_bin(self, byte_swap=False):
+        result = bytes(self._state)
+        if byte_swap:
+            return result[3::-1] + result[7:3:-1] + \
+                   result[11:7:-1] + result[15:11:-1] + \
+                   result[19:15:-1] + result[23:19:-1] + \
+                   result[27:23:-1] + result[31:27:-1]
+        else:
+            return result
 
 def stream_blocks(stream, block_size=64):
     while True:
