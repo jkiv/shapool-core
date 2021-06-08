@@ -98,4 +98,22 @@ Devices who did not finish their work will provide all zeros as a result.
 <img src="https://svg.wavedrom.com/{reg: [{name: 'winning nonce', bits: 32},{name: 'match flags', bits: 8}],config:{bits: 40, lanes: 1}}" />
 
 * `match flags`: bit positions having `1` denote pipelines (cores) that generated a winning hash.
-* `winning nonce`: the nonce that caused the winning hash, or zeros if not found.
+* `winning nonce`: the nonce that caused the winning hash (uncorrected), or zero if no winning nonce found.
+
+The `winning nonce` provided by devices is "uncorrected." This means that the host is responsible for reconstructing the actual nonce from `match flags` and other knowledge about the devices.
+
+1. The nonce value is +2 greater than the actual nonce that caused the match.
+2. Any hard-coded most-significant-bits are zeroed (e.g. in a multi-core configuration.)
+3.  `nonce_start_MSB` has not been applied to the returned value.
+
+So, reconstructing the nonce can be done as follows:
+
+1. Subtract 2 from the nonce.
+
+2. Correct the most-significant-bits using the value of match flags and the number of hard-coded bits per device.
+
+   For example, if there are 8 cores per device then there are `ceil(log2(8)) = 3` hard-coded bits per core. If match flags is `0x04` (bit position 2), then the most-significant-bits are `b010 = 2**2`.
+
+3. Apply `nonce_start_MSB` corresponding to the device that supplied the nonce.
+
+   For example, if `nonce_start_MSB = 0x80` and there are 3 hard-coded bits per core, then XOR the result with `0x80 << (24-3) = 0x01000000`
