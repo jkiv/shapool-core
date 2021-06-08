@@ -1,5 +1,3 @@
-//`include "difficulty.vh"
-
 module top_hx8k
 (
   clk_in,
@@ -20,7 +18,7 @@ module top_hx8k
 );
     parameter POOL_SIZE      = 2;
     parameter POOL_SIZE_LOG2 = 1;
-    parameter BASE_TARGET    = 42;
+    parameter BASE_TARGET    = 42; // difficulty=512
 
     // 12 MHz ~ 30 MHz
     parameter PLL_DIVR = 4'b0000;

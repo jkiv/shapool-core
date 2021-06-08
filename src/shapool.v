@@ -14,7 +14,7 @@ module shapool
 );
     parameter POOL_SIZE = 2;
     parameter POOL_SIZE_LOG2 = 1;
-    parameter BASE_DIFFICULTY = 64;
+    parameter BASE_TARGET = 32;
 
     localparam NONCE_LOWER_WIDTH = 32 - POOL_SIZE_LOG2;
 
@@ -97,7 +97,7 @@ module shapool
         /* verilator lint_on UNUSED */
 
         // Bits to test for `success`
-        wire [BASE_DIFFICULTY-1:0] H_test_bits;
+        wire [BASE_TARGET-1:0] H_test_bits;
 
 `ifndef SHAPOOL_NO_NONCE_OFFSET
         // Hard-coded unit offset
@@ -187,7 +187,7 @@ module shapool
         );
 
         // Endianness-swapped hash result for final comparison. 
-        // -- Depending on difficulty, lower bits may not be used. Hopefully
+        // -- Depending on target, lower bits may not be used. Hopefully
         //    logic for generating superfluous bits are optimized out.
         assign H_u1_swap = {
           H_u1[  7:  0], H_u1[ 15:  8], H_u1[ 23: 16], H_u1[ 31: 24],
@@ -201,7 +201,7 @@ module shapool
         };
 
         // Bits of result we care about
-        assign H_test_bits = H_u1_swap[255:256-BASE_DIFFICULTY];
+        assign H_test_bits = H_u1_swap[255:256-BASE_TARGET];
 
         // Test bits for zero
         assign match_flags[n] = ~(|H_test_bits);
