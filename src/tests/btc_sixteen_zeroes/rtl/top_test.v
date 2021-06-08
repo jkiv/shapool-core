@@ -16,13 +16,9 @@ module top_test
   // Indicator LED
   status_led_n_out
 );
-
-    // Making pool smaller to test / fit on HX8K
-    `define SHAPOOL_NO_NONCE_OFFSET // Required for POOL_SIZE = 1
-
-    parameter POOL_SIZE       = 1;
-    parameter POOL_SIZE_LOG2  = 0;
-    parameter BASE_TARGET     = 4; // Max. ~112 with 2 cores, 256 with 1 core
+    parameter POOL_SIZE       = 2;
+    parameter POOL_SIZE_LOG2  = 1;
+    parameter BASE_TARGET     = 16;
 
     // 12 MHz ~ 30 MHz
     parameter PLL_DIVR = 4'b0000;
