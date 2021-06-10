@@ -112,25 +112,21 @@ module shapool
         //
         //  31             31-POOL_SIZE_LOG2                      0
         // +-------------+-----------------------------------------+
-        // | nonce_upper | nonce_lower ^ {nonce_start_MSB, 0..0}   |
+        // | nonce_upper | nonce_lower                             |
         // +-------------+-----------------------------------------+
-        //
+        //                          XOR
+        // +-------------------------+-----------------------------+
+        // | nonce_start_MSB         | 0           ...           0 |
+        // +-------------------------+-----------------------------+
         // FUTURE Nonce space segmenting issues arise when not all devices
         // have the same `POOL_SIZE`.
 
         wire [31:0] M_nonce;
 
 `ifdef SHAPOOL_NO_NONCE_OFFSET
-        assign M_nonce = {
-          nonce_lower[31:24] ^ nonce_start_MSB,
-          nonce_lower[23:0]
-        };
+        assign M_nonce = nonce_lower ^ { nonce_start_MSB, 24'b0 };
 `else
-        assign M_nonce = {
-          nonce_upper,
-          nonce_lower[NONCE_LOWER_WIDTH-1:NONCE_LOWER_WIDTH-8] ^ nonce_start_MSB,
-          nonce_lower[NONCE_LOWER_WIDTH-9:0]
-        };
+        assign M_nonce = { nonce_upper, nonce_lower } ^ { nonce_start_MSB, 24'b0 };
 `endif
 
         assign M0 = {
