@@ -1,3 +1,5 @@
+`include "target.vh"
+
 module top_hx8k
 (
   clk_in,
@@ -16,14 +18,14 @@ module top_hx8k
   // Indicator LED
   status_led_n_out
 );
-    parameter POOL_SIZE      = 2;
-    parameter POOL_SIZE_LOG2 = 1;
-    parameter BASE_TARGET    = 39; // difficulty=128
+    localparam POOL_SIZE      = 2;
+    localparam POOL_SIZE_LOG2 = 1;
+    localparam BASE_TARGET    = `TARGET;
 
     // 12 MHz ~ 30 MHz
-    parameter PLL_DIVR = 4'b0000;
-    parameter PLL_DIVF = 7'b1001111;
-    parameter PLL_DIVQ = 3'b101;
+    localparam PLL_DIVR = 4'b0000;
+    localparam PLL_DIVF = 7'b1001111;
+    localparam PLL_DIVQ = 3'b101;
 
     // Multiply input clock signal using SB_PLL40_CORE
     wire g_clk;
@@ -36,7 +38,7 @@ module top_hx8k
         .FILTER_RANGE(3'b001)
     )
     pll (
-        .LOCK(pll_locked),
+        .LOCK(),
         .RESETB(1'b1),
         .BYPASS(1'b0),
         .REFERENCECLK(clk_in),

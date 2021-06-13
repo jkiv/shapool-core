@@ -1,3 +1,5 @@
+DIFFICULTY=1
+
 # Build all bitstreams
 
 .phony: all
@@ -15,6 +17,7 @@ lint : top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.
 
 .phony: clean
 clean :
+	rm -f target.vh
 	rm -f shapool-*.out \
 		  shapool-*.json \
 		  shapool-*.asc \
@@ -24,9 +27,13 @@ clean :
 # Synthesize for device type
 
 shapool-ice40-hx8k.json : top_hx8k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.v
+	rm -f target.vh
+	ln -s targets/target-$(DIFFICULTY).vh target.vh
 	yosys -p 'synth_ice40 -top top_hx8k -json $@ -abc2 -retime' $^
 
 shapool-ice40-up5k.json : top_up5k.v top.v shapool.v sha_unit.v sha_round.v w_expand.v SHA256_K.v external_io.v
+	rm -f target.vh
+	ln -s targets/target-$(DIFFICULTY).vh target.vh
 	yosys -p 'synth_ice40 -top top_up5k -json $@ -abc2 -retime' $^
 
 # Route for target board
